@@ -1,0 +1,48 @@
+# Local saved maps
+
+Status: implemented  
+Last reviewed: 2026-08-10
+
+## Understanding summary
+
+- A working draft can become a durable, named map without losing its original image or anchors.
+- The implementation is local-first and works in the current browser without accounts.
+- Structured metadata supports eventual public catalog filters.
+- New maps default to private; public-ready records intent only and does not publish.
+- My Maps lists multiple locally saved maps rather than only the active draft.
+- A saved map can be viewed, compared, or reopened for later anchor improvements.
+
+## Assumptions and requirements
+
+- Beta scale is dozens of maps on one device, not thousands of browser-local records.
+- Full-resolution image Blobs are retained; anchors and metadata are comparatively small.
+- IndexedDB is available. Clearing browser data can remove all local maps.
+- No live GPS coordinates, viewing history, or traveled paths are stored.
+- Writes are versioned and transactional, and database upgrades preserve the active draft.
+- There is currently no saved-map deletion control.
+
+## Approaches considered
+
+1. **Versioned IndexedDB map library (selected):** preserves Blobs offline, supports multiple named records, and leaves a path to later sync.
+2. **localStorage:** rejected because image Blobs do not fit safely and serialization is synchronous.
+3. **Immediate backend:** deferred because it adds authentication, access policy, object storage, billing, and conflicts before local viewing is proven.
+
+## Current design
+
+**Finish map** opens an accessible metadata dialog once at least two anchors exist. Title is required. Place, description, subject, visual style, map-date kind/year, activities, source, and visibility are structured fields. Saving creates or updates a stable UUID record containing the image Blob, dimensions, anchors, editor state, metadata, and timestamps.
+
+The active draft stores the UUID. Later anchor autosaves update the linked map's content without replacing metadata. My Maps sorts by update time, previews the source, exposes relevant facts, and searches title, place, type, style, description, date, and activities. Each card supports **Open map**, **Compare**, and **Edit anchors**.
+
+When records share the same normalized filename, dimensions, Blob byte size, and MIME type, listing My Maps consolidates them non-destructively. The record with the most anchors (then newest update) becomes canonical, unique anchor IDs are merged, and sibling records receive `supersededBy` rather than being deleted.
+
+## Decision log
+
+- **L-001 - Local named maps first:** selected IndexedDB before accounts.
+- **L-002 - Preserve the current draft:** database version 2 adds `saved-maps` beside `anchor-drafts`.
+- **L-003 - Private default:** public-ready is future publishing intent only.
+- **L-004 - Structured metadata now:** catalog facets are stored separately from the title.
+- **L-005 - Autosync linked maps:** later anchor edits update their stable record.
+- **L-006 - No deletion:** user work is retained while recovery/export is unfinished.
+- **L-007 - Theme-independent storage:** UI styling can change without a data migration.
+- **L-008 - Exact-source saves resolve to one map:** the strongest record becomes canonical and older siblings are retained.
+- **L-009 - Saved maps are directly useful:** records link to GPS viewing and Compare, not only editing.

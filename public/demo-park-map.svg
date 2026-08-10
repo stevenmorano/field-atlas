@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#edf0d8"/>
+  <path d="M0 610C175 550 275 685 442 615c147-61 212-204 379-160 147 39 213 170 379 109v236H0Z" fill="#91bab7"/>
+  <path d="M-30 505c195-20 312 70 460 20 143-48 233-179 390-159 144 19 238 105 432 44" fill="none" stroke="#f8f1d7" stroke-width="54"/>
+  <path d="M-30 505c195-20 312 70 460 20 143-48 233-179 390-159 144 19 238 105 432 44" fill="none" stroke="#47634b" stroke-width="7" stroke-dasharray="18 15"/>
+  <path d="M124 67c104 76 99 185 186 252 83 64 206 41 283 125 63 69 44 161 113 235" fill="none" stroke="#f8f1d7" stroke-width="44"/>
+  <path d="M124 67c104 76 99 185 186 252 83 64 206 41 283 125 63 69 44 161 113 235" fill="none" stroke="#5c795d" stroke-width="5"/>
+  <g fill="#9ab383" opacity=".9">
+    <path d="m90 104 45-68 45 68h-24l31 46h-104l31-46Z"/>
+    <path d="m1004 104 45-68 45 68h-24l31 46h-104l31-46Z"/>
+    <path d="m925 258 35-52 35 52h-19l25 37h-82l25-37Z"/>
+    <path d="m196 650 35-52 35 52h-19l25 37h-82l25-37Z"/>
+    <path d="m1060 653 35-52 35 52h-19l25 37h-82l25-37Z"/>
+  </g>
+  <g stroke="#17211c" stroke-width="4">
+    <rect x="744" y="125" width="230" height="122" rx="24" fill="#e9b95f"/>
+    <circle cx="326" cy="201" r="84" fill="#d9a987"/>
+    <path d="M793 596h195v118H793z" fill="#e8d8b4"/>
+  </g>
+  <g fill="#17211c" font-family="Verdana, sans-serif" text-anchor="middle">
+    <text x="859" y="180" font-size="29" font-weight="700">Ridge Pavilion</text>
+    <text x="859" y="215" font-size="20">north overlook</text>
+    <text x="326" y="195" font-size="28" font-weight="700">Fox Meadow</text>
+    <text x="326" y="230" font-size="20">picnic circle</text>
+    <text x="891" y="650" font-size="28" font-weight="700">River Gate</text>
+    <text x="891" y="683" font-size="20">visitor entrance</text>
+    <text x="577" y="742" font-size="22" font-style="italic">South Fork</text>
+  </g>
+  <g fill="none" stroke="#17211c" stroke-width="2" opacity=".22">
+    <path d="M40 314c167-88 273-21 385-84 106-60 154-153 302-163 128-9 247 53 432-20"/>
+    <path d="M39 343c167-88 273-21 385-84 106-60 154-153 302-163 128-9 247 53 432-20"/>
+    <path d="M55 713c133-62 219-24 321-69 129-57 198-157 348-171"/>
+  </g>
+  <text x="65" y="755" fill="#17211c" font-family="Verdana, sans-serif" font-size="18" font-weight="700">DEMO ILLUSTRATED PARK MAP</text>
+</svg>

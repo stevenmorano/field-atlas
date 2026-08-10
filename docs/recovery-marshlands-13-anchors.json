@@ -1,0 +1,19 @@
+{
+  "source": "User screenshots captured before draft persistence was added",
+  "imageNamePrefix": "RyeMarshlandConservancyTrailMap2",
+  "anchors": [
+    { "image": { "x": 1299, "y": 4725 }, "geographic": { "latitude": 40.94672, "longitude": -73.70184 } },
+    { "image": { "x": 1679, "y": 3943 }, "geographic": { "latitude": 40.94901, "longitude": -73.70115 } },
+    { "image": { "x": 1552, "y": 3266 }, "geographic": { "latitude": 40.95068, "longitude": -73.70210 } },
+    { "image": { "x": 1257, "y": 3636 }, "geographic": { "latitude": 40.94946, "longitude": -73.70285 } },
+    { "image": { "x": 1233, "y": 3545 }, "geographic": { "latitude": 40.94974, "longitude": -73.70301 } },
+    { "image": { "x": 1572, "y": 2838 }, "geographic": { "latitude": 40.95189, "longitude": -73.70249 } },
+    { "image": { "x": 1477, "y": 2299 }, "geographic": { "latitude": 40.95329, "longitude": -73.70328 } },
+    { "image": { "x": 1369, "y": 1507 }, "geographic": { "latitude": 40.95520, "longitude": -73.70429 } },
+    { "image": { "x": 1318, "y": 1163 }, "geographic": { "latitude": 40.95610, "longitude": -73.70477 } },
+    { "image": { "x": 1458, "y": 271 }, "geographic": { "latitude": 40.95848, "longitude": -73.70500 } },
+    { "image": { "x": 1535, "y": 1327 }, "geographic": { "latitude": 40.95579, "longitude": -73.70385 } },
+    { "image": { "x": 1519, "y": 1200 }, "geographic": { "latitude": 40.95611, "longitude": -73.70399 } },
+    { "image": { "x": 1801, "y": 1253 }, "geographic": { "latitude": 40.95620, "longitude": -73.70299 } }
+  ]
+}

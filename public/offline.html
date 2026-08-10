@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3efe4" />
+    <title>Offline · Field Atlas</title>
+    <style>
+      :root { color: #17211c; background: #f3efe4; font-family: system-ui, sans-serif; }
+      body { display: grid; min-height: 100vh; margin: 0; padding: 1.5rem; place-items: center; }
+      main { max-width: 30rem; padding: 2rem; border: 1px solid rgba(23,33,28,.34); border-radius: 1.4rem; background: #fbf8f0; }
+      img { width: 4rem; height: 4rem; }
+      h1 { margin: .8rem 0 .4rem; font-family: Georgia, serif; font-size: 2.4rem; line-height: 1; }
+      p { color: #4d5851; }
+      button { padding: .75rem 1rem; border: 0; border-radius: 999px; color: #fbf8f0; background: #2e4736; font: inherit; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon.svg" alt="" />
+      <h1>You are off the grid.</h1>
+      <p>Previously downloaded maps will live here in the full beta. Reconnect to keep exploring the public catalog.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>
