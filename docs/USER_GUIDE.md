@@ -5,7 +5,7 @@ Last reviewed: 2026-08-10
 
 ## Important storage warning
 
-Your maps are currently stored only in this browser profile on this website origin. Do not clear site data or switch to another browser and expect the maps to follow. Portable backup and restore is planned next but is not implemented yet.
+Your working library is stored in this browser profile on this website origin. Before clearing site data or switching browsers/devices, open My Maps and choose **Back up all maps**. Keep the downloaded `.fieldatlas` file somewhere private and import it in the destination browser. Field Atlas does not synchronize it automatically.
 
 ## Create and anchor a map
 
@@ -54,6 +54,18 @@ Open `/my-maps` to see all active saved records. Search by title, place, type, y
 
 If the same source image was accidentally saved more than once, Field Atlas consolidates exact-source records and preserves the strongest anchor set. Superseded records remain in storage and are not deleted.
 
+## Back up or restore My Maps
+
+Open `/my-maps` and find **Protect your maps**.
+
+1. Choose **Back up all maps** to download one dated `.fieldatlas` file.
+2. The file contains every active saved map, its exact original image bytes, metadata and anchors, plus the active unfinished Anchor Lab draft when one exists.
+3. Keep the file somewhere you trust. Private map images remain private only if the backup file does.
+4. To restore, choose **Import backup** and select the `.fieldatlas` file.
+5. Review the verified preview before importing. It lists new maps, already-present maps, same-ID conflicts kept as separate copies, and draft behavior.
+
+Import never silently overwrites a saved map. Exact duplicates are skipped. A divergent map with an existing ID is kept as a visible **(Imported copy)**. If the browser already has an active draft, the current draft remains selected unless you explicitly choose to replace it.
+
 ## View a map and use GPS
 
 1. Select **Open map** from My Maps.
@@ -81,7 +93,7 @@ Compare is for visual exploration, not survey work. Areas outside distributed an
 
 ### A saved map is missing
 
-Confirm that you are using the same browser profile, hostname, and port that created it. `localhost:3000` and another deployed domain have separate IndexedDB storage. Avoid clearing browser data.
+Confirm that you are using the same browser profile, hostname, and port that created it. `localhost:3000` and another deployed domain have separate IndexedDB storage. If you have a `.fieldatlas` backup, import it from My Maps. Avoid clearing browser data until the backup has been verified.
 
 ### The base map is blank
 

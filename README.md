@@ -16,6 +16,7 @@ The current build is a local-first functional prototype. A map image, its metada
 - Reopen a saved map for additional anchors without creating an accidental duplicate.
 - View a saved image at full resolution and project foreground browser GPS onto it with an accuracy area.
 - Compare a saved map as a warped, adjustable-opacity overlay on a live basemap.
+- Export every active saved map plus the unfinished draft to one verified `.fieldatlas` backup, then preview and restore it without overwriting existing work.
 - Install the production build as a PWA with a small offline application shell.
 
 The Discover catalog currently uses four sample records. Public uploads, accounts, cloud synchronization, community moderation, PDF conversion, and production offline packages are planned but are not implemented.
@@ -79,6 +80,6 @@ Feature decision records are kept in `docs/` beside the current guides.
 
 ## Local-data warning
 
-Saved maps and the active draft live in IndexedDB for the current browser profile and origin. They are not yet synchronized elsewhere. Clearing site data, changing browsers, or using another device will not carry them over. Portable backup and restore is the next planned local-safety increment; until it ships, preserve the browser profile containing important maps.
+Saved maps and the active draft live in IndexedDB for the current browser profile and origin. They are not yet synchronized elsewhere. Use **Back up all maps** in My Maps before clearing site data, changing browsers, or moving to another device, then keep the downloaded `.fieldatlas` file somewhere you trust. Importing that file restores its maps locally; it is not automatic cloud synchronization.
 
 Live GPS coordinates are processed in memory only. The viewer does not store a location trail or send coordinates to an application server.

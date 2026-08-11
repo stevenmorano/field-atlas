@@ -1,6 +1,6 @@
 # Implementation plan
 
-Status: active local prototype  
+Status: portable backup implemented; image preparation next
 Last updated: 2026-08-10
 
 ## Delivery strategy
@@ -26,13 +26,14 @@ The next steps prioritize protecting real user work, then making map preparation
 - [x] Safe fresh-map confirmation and saved-map editing without accidental duplicates.
 - [x] Foreground GPS viewer with image-space accuracy visualization.
 - [x] Warped Compare overlay with opacity, visibility, basemap choices, and fit.
+- [x] Portable `.fieldatlas` backup/restore with exact images, import preview, conflict preservation, and draft protection.
 - [x] Unit tests and lint/type/test/build validation workflow.
 
-## Immediate increment: portable backup and restore
+## Completed increment: portable backup and restore
 
 Goal: protect every locally created map before more browser-only work accumulates.
 
-Confirmed scope:
+Delivered scope:
 
 - One action backs up all visible saved maps and the active unfinished Anchor Lab draft, if present.
 - Original image Blobs, intrinsic dimensions, every anchor, editor state, metadata, IDs, and timestamps are preserved.
@@ -41,14 +42,14 @@ Confirmed scope:
 - A malformed, truncated, unsupported, or incomplete package leaves current storage unchanged.
 - The operation remains local and does not require an account or network.
 
-Still to lock in the feature design:
+Implemented design details:
 
-- Package representation and extension.
-- Exact duplicate and same-ID conflict behavior.
-- Whether the imported active draft replaces the current draft, is skipped, or requires an explicit choice.
-- Size limits and progress/error behavior for high-resolution image collections.
-
-No backup implementation should begin until those decisions are documented and accepted.
+- Use a versioned `.fieldatlas` binary package with a JSON manifest and raw image payloads.
+- Deduplicate package images by SHA-256 without resizing or recompression.
+- Skip identical records and preserve divergent same-ID maps as visible imported copies.
+- Keep an existing active draft unless replacement is explicitly confirmed.
+- Validate the complete package before one atomic IndexedDB transaction.
+- See [`docs/portable-backup.md`](docs/portable-backup.md) for the package contract and test plan.
 
 ## Next local-product increments
 

@@ -38,7 +38,9 @@ The optional rotation field is backward-compatible: older records without it ope
 - original filename, Blob, and intrinsic dimensions;
 - all anchor pairs;
 - target zoom and basemap mode;
-- optional `supersededBy` pointer used for non-destructive consolidation.
+- optional `supersededBy` pointer used for non-destructive consolidation;
+- optional intentional-variant marker; and
+- optional import lineage for a divergent same-ID map preserved as an imported copy.
 
 Metadata contains title, description, place name, subject, visual style, map date kind/year, activity tags, source, and private/public-ready intent. Public-ready currently has no network effect.
 
@@ -49,6 +51,8 @@ Metadata contains title, description, place name, subject, visual style, map dat
 - Finishing a map writes the saved record and then links the active draft to its stable UUID.
 - Later edits to a linked draft update saved image/anchor content while retaining metadata and creation time.
 - Starting a fresh map deletes only the `current` draft after explicit confirmation. It does not delete finished My Maps records.
+- Backup export is read-only and does not update map or draft timestamps.
+- Confirmed import validates the whole package first, then writes saved maps and the optional draft in one transaction spanning both stores.
 - The application currently exposes no saved-map deletion control.
 
 ## Duplicate consolidation
@@ -83,7 +87,13 @@ The production service worker caches same-origin application resources, not a co
 
 IndexedDB is durable browser storage, not a backup. Data may be lost if the user clears site data, removes the browser profile, uses private-browsing storage, changes origin, or the browser evicts storage. There is currently no cross-device synchronization.
 
-The next planned safety feature is a portable, versioned backup containing every saved map, its original image, anchors and metadata, plus the active unfinished draft. Import must be non-destructive and must not silently overwrite existing records. This paragraph describes planned behavior, not a current capability.
+Field Atlas now provides a portable, versioned `.fieldatlas` backup containing active saved maps, exact original image bytes, anchors and metadata, plus the active unfinished draft. Import validates the package before writing, skips exact duplicates, preserves divergent same-ID records as separate imported copies, and keeps the current draft by default.
+
+The downloaded file is still user-managed. Field Atlas cannot verify that it remains available after download and does not upload it to a cloud account. Losing both the browser data and every exported copy still loses the library.
+
+## Portable backup privacy boundary
+
+Backup creation and import run locally. The package is a binary container with a versioned JSON manifest and SHA-256-addressed raw image payloads; images are not resized, recompressed, or base64-expanded. The package excludes live GPS readings, location history, browsing history, and secrets. Because it may contain private maps and filenames, treat the file as sensitive data.
 
 ## Future server boundary
 

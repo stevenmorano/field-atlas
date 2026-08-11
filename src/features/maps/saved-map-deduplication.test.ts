@@ -63,4 +63,16 @@ describe("saved-map exact-source consolidation", () => {
 
     expect(result.visibleMaps[0].anchors.map((anchor) => anchor.id)).toEqual(["a", "c", "d", "b"]);
   });
+
+  it("keeps intentional imported variants visible", () => {
+    const original = makeMap("original", ["a"], 100);
+    const importedVariant = {
+      ...makeMap("variant", ["b"], 200),
+      preserveAsVariant: true,
+    };
+    const result = consolidateExactSourceMaps([original, importedVariant]);
+
+    expect(result.visibleMaps.map((map) => map.id).sort()).toEqual(["original", "variant"]);
+    expect(result.recordsToWrite).toHaveLength(0);
+  });
 });

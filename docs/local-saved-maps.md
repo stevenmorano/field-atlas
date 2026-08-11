@@ -35,6 +35,8 @@ The active draft stores the UUID. Later anchor autosaves update the linked map's
 
 When records share the same normalized filename, dimensions, Blob byte size, and MIME type, listing My Maps consolidates them non-destructively. The record with the most anchors (then newest update) becomes canonical, unique anchor IDs are merged, and sibling records receive `supersededBy` rather than being deleted.
 
+My Maps also exposes one portable backup containing every active/canonical record and the current draft. Imported same-ID conflicts are explicitly marked as intentional variants so consolidation keeps both copies visible.
+
 ## Decision log
 
 - **L-001 - Local named maps first:** selected IndexedDB before accounts.
@@ -46,3 +48,4 @@ When records share the same normalized filename, dimensions, Blob byte size, and
 - **L-007 - Theme-independent storage:** UI styling can change without a data migration.
 - **L-008 - Exact-source saves resolve to one map:** the strongest record becomes canonical and older siblings are retained.
 - **L-009 - Saved maps are directly useful:** records link to GPS viewing and Compare, not only editing.
+- **L-010 - Portable safety copy:** active maps and the current draft can round-trip without recompressing source images or overwriting existing records.

@@ -16,6 +16,7 @@ The repository currently implements:
 - similarity, affine, and triangulated piecewise-affine forward/inverse georeferencing;
 - 90-degree working-view rotation, deep pan/zoom, undo/redo, mesh warnings, and draft autosave;
 - a multi-map IndexedDB My Maps library with structured metadata;
+- a versioned, non-destructive portable backup/restore flow for local maps and the active draft;
 - a high-resolution foreground-GPS viewer that keeps readings on-device; and
 - a locally warped Compare overlay with opacity and fit controls.
 
@@ -709,7 +710,6 @@ These do not block the product design but require prototype evidence or setup ch
 - Exact confidence, residual, and fold thresholds.
 - Authentication methods offered at beta launch.
 - Administrator notification channel for reports and volunteer submissions.
-- Portable backup package representation and non-destructive import conflict rules for the local prototype.
 
 ## 29. Source references
 

@@ -31,7 +31,7 @@ async function readSavedMapRecord(mapId: string) {
   }
 }
 
-async function readAllSavedMapRecords() {
+export async function readAllSavedMapRecords() {
   const database = await openLocalDatabase();
 
   try {
@@ -124,6 +124,8 @@ export async function saveNamedMap(input: Readonly<{
     updatedAt: now,
     metadata: input.metadata,
     supersededBy: undefined,
+    preserveAsVariant: existing?.preserveAsVariant,
+    importLineage: existing?.importLineage,
     ...input.content,
   };
 

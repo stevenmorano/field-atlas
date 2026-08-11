@@ -40,7 +40,7 @@ When linked to a finished map, later autosaves also update that saved map's imag
 - Object URLs are recreated from stored Blobs and revoked when replaced or unmounted.
 - Failed writes leave the editor state intact and show a visible retry state.
 - The version field and optional fields support later migrations.
-- Portable backup remains planned; IndexedDB durability is not a substitute for a backup.
+- Portable backup includes the active draft, but IndexedDB durability and an unverified or lost download are not substitutes for a retained backup copy.
 
 ## Decision log
 
@@ -49,4 +49,4 @@ When linked to a finished map, later autosaves also update that saved map's imag
 - Selected debounced autosave plus a manual checkpoint.
 - Added named finished maps without changing the single-active-draft model.
 - Persisted editor rotation as optional view state, not as transformed source pixels.
-- Deferred accounts, server sync, sharing, and portable export to separate increments.
+- Added local portable export while keeping accounts, server sync, and sharing in separate increments.

@@ -10,6 +10,7 @@ flowchart LR
     User[Browser user] --> Next[Next.js App Router UI]
     Next --> Draft[IndexedDB anchor-drafts]
     Next --> Maps[IndexedDB saved-maps]
+    Next --> Backup[Local .fieldatlas package]
     Next --> Geo[Local georeferencing model]
     Next --> GPS[Browser Geolocation API]
     Next --> ML[MapLibre GL JS]
@@ -27,7 +28,7 @@ There is currently no application API, account system, cloud object store, or se
 | `/` | `DiscoverExperience` | Sample catalog, search/filter, one-shot foreground location, distance ordering |
 | `/anchor` | `AnchorWorkbench` | Resume or create the active draft and edit anchors |
 | `/anchor/new` | `NewAnchorSession` | Warn before replacing the active draft and start a clean workspace |
-| `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, or reopen saved maps |
+| `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, reopen, back up, or restore saved maps |
 | `/maps/[mapId]` | `SavedMapViewer` | High-resolution raster viewer and ephemeral foreground GPS projection |
 | `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped raster overlay synchronized with MapLibre |
 
@@ -37,6 +38,7 @@ The App Router page files are intentionally thin; feature modules own browser st
 
 - `src/features/anchor`: file selection, target-image gestures, basemap interaction, anchor history, draft hydration/autosave, and 90-degree working-view rotation.
 - `src/features/maps`: structured metadata, saved-map persistence, exact-source consolidation, and My Maps UI.
+- `src/features/backup`: versioned package encoding/validation, SHA-256 asset deduplication, import conflict planning, atomic restore, and My Maps backup controls.
 - `src/features/viewer`: saved-image pan/zoom, foreground geolocation watch, GPS-to-image projection, and accuracy visualization.
 - `src/features/compare`: compare-mesh construction and triangle-by-triangle Canvas 2D rendering over MapLibre.
 - `src/features/discover`: typed sample catalog, filters, distance calculations, and foreground location ordering.
@@ -79,6 +81,12 @@ The IndexedDB database is `field-atlas-local`, version 2:
 
 Both stores retain native `Blob` values; image data is not base64-encoded. Writes use explicit IndexedDB transactions. Details are in [`DATA_AND_PRIVACY.md`](DATA_AND_PRIVACY.md).
 
+## Portable backup pipeline
+
+The `.fieldatlas` version 1 container starts with the `FATLAS01` magic header and a little-endian manifest length, followed by a UTF-8 JSON manifest and contiguous raw image payloads. SHA-256 IDs deduplicate images shared by a saved map and its active draft. Preview parsing validates record limits, numeric fields, payload ranges, and every checksum before import can begin.
+
+Import planning is non-destructive: exact records are skipped; divergent records sharing an ID receive a new UUID, a visible imported-copy title, and lineage metadata. Confirmed changes use one read/write transaction across `saved-maps` and `anchor-drafts`, with the current draft retained unless replacement is explicitly selected. The full contract is in [`portable-backup.md`](portable-backup.md).
+
 ## Basemap and compare rendering
 
 MapLibre supplies pan, zoom, and base-layer rendering. The default development style contains OSM Street and Esri Satellite raster sources. Hybrid draws a muted, partially transparent OSM layer over imagery.
@@ -91,4 +99,4 @@ The service worker registers only in production. It precaches the home page, My 
 
 ## Testing and validation
 
-Vitest covers georeferencing math, Mercator conversion, basemap configuration, GPS projection, saved-map consolidation, comparison mesh/render transforms, and view rotation. Repository validation commands are documented in [`../README.md`](../README.md#quality-commands).
+Vitest covers georeferencing math, Mercator conversion, basemap configuration, GPS projection, saved-map consolidation, backup package integrity/conflict planning, comparison mesh/render transforms, and view rotation. Repository validation commands are documented in [`../README.md`](../README.md#quality-commands).

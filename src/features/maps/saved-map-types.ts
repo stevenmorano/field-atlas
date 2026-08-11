@@ -59,6 +59,12 @@ export type SavedMapContent = Readonly<{
   basemapMode: DemoBasemapMode;
 }>;
 
+export type SavedMapImportLineage = Readonly<{
+  sourceMapId: string;
+  sourceFingerprint: string;
+  importedAt: number;
+}>;
+
 export type LocalSavedMap = Readonly<{
   id: string;
   version: 1;
@@ -66,6 +72,8 @@ export type LocalSavedMap = Readonly<{
   updatedAt: number;
   metadata: SavedMapMetadata;
   supersededBy?: string;
+  preserveAsVariant?: boolean;
+  importLineage?: SavedMapImportLineage;
 }> & SavedMapContent;
 
 export const EMPTY_MAP_METADATA: SavedMapMetadata = {

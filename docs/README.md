@@ -21,6 +21,7 @@ This folder separates documentation of the **working local prototype** from reco
 - [`local-gps-viewer.md`](local-gps-viewer.md)
 - [`local-map-compare.md`](local-map-compare.md)
 - [`anchor-view-rotation.md`](anchor-view-rotation.md)
+- [`portable-backup.md`](portable-backup.md)
 
 These records capture accepted scope, alternatives, and decisions. If implementation behavior changes, update the corresponding record together with the current-state guides.
 
@@ -29,5 +30,5 @@ These records capture accepted scope, alternatives, and decisions. If implementa
 - Say **current** or **implemented** only for behavior present in the repository.
 - Say **planned**, **target**, or **future beta** for unimplemented backend/community behavior.
 - Prefer route names and exported data types over screenshots that can become stale.
-- Never claim that local browser data is backed up or cross-device until a verified export, sync, or server feature exists.
+- Distinguish the implemented user-managed `.fieldatlas` export/import from automatic cloud backup or cross-device synchronization, which do not yet exist.
 - Do not document GPS collection beyond foreground, in-memory browser use.

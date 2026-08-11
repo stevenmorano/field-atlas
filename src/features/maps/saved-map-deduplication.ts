@@ -24,7 +24,9 @@ function compareCanonicalCandidates(left: LocalSavedMap, right: LocalSavedMap) {
 export function consolidateExactSourceMaps(maps: readonly LocalSavedMap[]): ConsolidatedMaps {
   const groups = new Map<string, LocalSavedMap[]>();
   for (const map of maps) {
-    const signature = savedMapAssetSignature(map);
+    const signature = map.preserveAsVariant
+      ? `${savedMapAssetSignature(map)}|variant:${map.id}`
+      : savedMapAssetSignature(map);
     const group = groups.get(signature) ?? [];
     group.push(map);
     groups.set(signature, group);

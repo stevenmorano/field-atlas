@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { writeCurrentAnchorDraft } from "@/features/anchor/local-draft-store";
+import { MapBackupControls } from "@/features/backup/map-backup-controls";
 import { listSavedMaps } from "@/features/maps/local-saved-map-store";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 
@@ -41,6 +42,7 @@ export function MyMapsLibrary() {
   const [query, setQuery] = useState("");
   const [openingMapId, setOpeningMapId] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [libraryVersion, setLibraryVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +77,7 @@ export function MyMapsLibrary() {
         URL.revokeObjectURL(url);
       }
     };
-  }, []);
+  }, [libraryVersion]);
 
   const visibleMaps = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -251,6 +253,8 @@ export function MyMapsLibrary() {
           )}
         </>
       )}
+
+      <MapBackupControls onImportComplete={() => setLibraryVersion((version) => version + 1)} />
 
       <aside className="local-storage-note">
         <strong>On this device only</strong>

@@ -13,6 +13,7 @@ This project is pre-release. Entries describe the working local prototype rather
 - Uploaded-map working-view rotation in 90-degree steps with original-coordinate preservation.
 - Street, Satellite, and Hybrid base-map modes for the built-in MapLibre style.
 - Exact-source saved-map consolidation that retains superseded records.
+- Versioned `.fieldatlas` backup and restore for all active saved maps and the current draft, with exact image bytes, checksum validation, import preview, duplicate skipping, conflict copies, and atomic IndexedDB writes.
 - Current architecture, user, privacy/data, and documentation index guides.
 
 ### Changed
@@ -24,7 +25,7 @@ This project is pre-release. Entries describe the working local prototype rather
 
 ### Known limitations
 
-- User maps exist only in the current browser origin; portable backup/restore is planned next.
+- User maps remain browser-local between manual `.fieldatlas` exports/imports; there is no automatic cloud backup or cross-device synchronization.
 - Discover uses sample data and its Details buttons are non-functional placeholders.
 - There are no accounts, server publishing, public catalog, reports, favorites, or community anchoring yet.
 - PDF conversion, cropping, free-angle source preparation, and browser-independent HEIC decoding are not implemented.
