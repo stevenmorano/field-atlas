@@ -1,17 +1,17 @@
 # Portable backup and restore
 
 Status: implemented and browser-verified
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Understanding summary
 
 - One portable backup must protect every active My Maps record plus the unfinished Anchor Lab draft, if one exists.
-- The purpose is recovery from browser-profile loss, site-data clearing, or movement to another browser before accounts and cloud synchronization exist.
+- The purpose is recovery from browser-profile loss, site-data clearing, or movement to another browser, including maps not yet explicitly synchronized to an account.
 - Original image bytes, structured metadata, anchors, stable IDs, timestamps, and relevant editor state must survive a round trip.
 - Backup and restore remain entirely local and require neither an account nor a network request.
 - Import must never silently delete, overwrite, or reduce existing work.
 - Corrupt, unsupported, or incomplete packages must leave IndexedDB unchanged.
-- The format should map cleanly to future account-based online records and image assets.
+- The format maps cleanly to the later account-based records while remaining an independent user-controlled backup.
 
 ## Assumptions and non-functional requirements
 
@@ -113,11 +113,11 @@ My Maps gains a **Protect your maps** section near its current local-storage war
 - The browser may show the last successful export time as a convenience, but the copy must not claim that the downloaded file still exists.
 - The confirmation label describes the exact operation, such as **Import 3 maps and keep current draft**.
 
-## Future online storage boundary
+## Online storage boundary
 
-The manifest deliberately mirrors future server entities: maps, image assets, metadata, anchors, IDs, timestamps, and draft state remain separate. A later authenticated API can reuse validated transfer objects while replacing payload offsets with uploaded object references.
+The manifest deliberately mirrors server entities: maps, image assets, metadata, anchors, IDs, timestamps, and draft state remain separate. The implemented authenticated sync uses its own validated transfer objects and R2 references; backup import remains local and does not call those APIs.
 
-Cloud work still requires independent decisions for authentication, ownership, private/public authorization, storage quotas, resumable uploads, synchronization, remote revisions, and conflicts. Version 1 backup does not pretend to provide those guarantees.
+Authentication, ownership, private/public authorization, synchronization, remote revisions, and conflict preservation are now separate cloud responsibilities. Storage quotas, resumable/background processing, and complete remote recovery operations still need larger-beta hardening. Version 1 backup does not pretend to provide those guarantees.
 
 ## Error handling and security
 
@@ -165,4 +165,4 @@ Further hardening should add direct IndexedDB transaction-abort integration cove
 - **B-007 - Preserve conflicts:** skip identical records but keep divergent same-ID maps as visible imported copies.
 - **B-008 - Protect the active draft:** keep the current draft unless replacement is explicitly confirmed.
 - **B-009 - Dependency-light version 1:** do not add ZIP/compression solely for backup.
-- **B-010 - Cloud-compatible records:** keep package entities aligned with the future authenticated storage model.
+- **B-010 - Cloud-compatible records:** keep package entities aligned with the authenticated storage model without coupling backup import to cloud availability.

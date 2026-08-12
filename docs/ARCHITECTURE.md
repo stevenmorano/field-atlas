@@ -1,7 +1,7 @@
 # Current architecture
 
-Status: implemented local prototype  
-Last reviewed: 2026-08-10
+Status: implemented local-first beta with activated private sync and core community publishing in development
+Last reviewed: 2026-08-12
 
 ## System overview
 
@@ -10,40 +10,55 @@ flowchart LR
     User[Browser user] --> Next[Next.js App Router UI]
     Next --> Draft[IndexedDB anchor-drafts]
     Next --> Maps[IndexedDB saved-maps]
+    Next --> SyncState[IndexedDB cloud-sync-state]
     Next --> Backup[Local .fieldatlas package]
     Next --> Geo[Local georeferencing model]
     Next --> GPS[Browser Geolocation API]
     Next --> ML[MapLibre GL JS]
     ML --> OSM[OpenStreetMap raster tiles]
     ML --> Esri[Esri World Imagery]
+    Next -. optional .-> Auth[Supabase Auth]
+    Next -. metadata and revisions .-> DB[Supabase Postgres]
+    Next -. presigned original upload .-> R2[Private Cloudflare R2]
+    Next -. sanitized public derivatives .-> R2
+    Visitor[Anonymous visitor] --> Next
+    Next -. allowlisted public DTOs .-> DB
     SW[Production service worker] --> Shell[Cached application shell]
 ```
 
-There is currently no application API, account system, cloud object store, or server database. All user-created map content remains in the browser origin's IndexedDB database.
+All core map behavior remains browser-local. When configured, App Router handlers add Supabase email authentication, RLS-protected metadata/revisions, and authorized presigned R2 image transfer. Missing cloud configuration does not disable or redirect any local route.
 
 ## Application routes
 
 | Route | Main component | Responsibility |
 | --- | --- | --- |
-| `/` | `DiscoverExperience` | Sample catalog, search/filter, one-shot foreground location, distance ordering |
+| `/` | `DiscoverExperience` | Public catalog with sample fallback, search/filter, one-shot foreground location, distance ordering |
 | `/anchor` | `AnchorWorkbench` | Resume or create the active draft and edit anchors |
 | `/anchor/new` | `NewAnchorSession` | Warn before replacing the active draft and start a clean workspace |
 | `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, reopen, back up, or restore saved maps |
-| `/maps/[mapId]` | `SavedMapViewer` | High-resolution raster viewer and ephemeral foreground GPS projection |
+| `/account` | `AccountPanel` | Email/password account, public profile settings, sign-out, and cloud-setup state |
+| `/maps/[mapId]` | `SavedMapViewer` | Local or authorized-public raster viewer, offline save, reports, and ephemeral GPS |
 | `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped raster overlay synchronized with MapLibre |
+| `/profiles/[username]` | `PublicProfile` | Anonymous public mapmaker page and effective-public contributions |
+| `/moderation` | `ModerationConsole` | Staff-only post-publication and report queue |
 
 The App Router page files are intentionally thin; feature modules own browser state and behavior.
+
+The JSON and redirect handlers under `/api/cloud/*` and `/api/community/*` are cataloged in [`API_REFERENCE.md`](API_REFERENCE.md). They are a browser-application API, not a stable third-party public API.
 
 ## Feature boundaries
 
 - `src/features/anchor`: file selection, target-image gestures, basemap interaction, anchor history, draft hydration/autosave, and 90-degree working-view rotation.
 - `src/features/maps`: structured metadata, saved-map persistence, exact-source consolidation, and My Maps UI.
 - `src/features/backup`: versioned package encoding/validation, SHA-256 asset deduplication, import conflict planning, atomic restore, and My Maps backup controls.
+- `src/features/cloud`: upload validation, hashing, explicit private sync, immutable revision state, account map listing, and verified device download.
+- `src/features/community`: explicit publishing, public/unlisted contracts, anonymous reports, profiles, Discover cards, and moderation UI.
 - `src/features/viewer`: saved-image pan/zoom, foreground geolocation watch, GPS-to-image projection, and accuracy visualization.
 - `src/features/compare`: compare-mesh construction and triangle-by-triangle Canvas 2D rendering over MapLibre.
-- `src/features/discover`: typed sample catalog, filters, distance calculations, and foreground location ordering.
+- `src/features/discover`: public catalog integration with sample fallback, filters, distance calculations, and foreground location ordering.
 - `src/lib/georeferencing`: Web Mercator conversion, similarity/affine fitting, Delaunay triangulation, forward/inverse projection, and quality warnings.
 - `src/lib/local-database.ts`: IndexedDB database name, version, stores, and transaction helpers.
+- `src/lib/supabase`, `src/lib/cloud`, and `src/lib/community`: cookie-based Supabase clients, API authorization, private sync DTOs, R2 transfer, image sanitization, publication CAS, and allowlisted public DTOs.
 
 ## Georeferencing pipeline
 
@@ -74,12 +89,21 @@ Editor rotation is display-only. Pointer coordinates and marker positions are co
 
 ## Local persistence
 
-The IndexedDB database is `field-atlas-local`, version 2:
+The IndexedDB database is `field-atlas-local`, version 3:
 
 - `anchor-drafts`: one record with key `current`.
 - `saved-maps`: versioned named map records keyed by UUID.
+- `cloud-sync-state`: the last accepted server revision/fingerprint for each explicitly synced local map.
 
 Both stores retain native `Blob` values; image data is not base64-encoded. Writes use explicit IndexedDB transactions. Details are in [`DATA_AND_PRIVACY.md`](DATA_AND_PRIVACY.md).
+
+## Optional cloud pipeline
+
+Account sessions use Supabase SSR cookies refreshed by the Next.js 16 `proxy.ts` convention. Every mutation re-verifies authentication/authorization close to the data source. Postgres RLS permits owners to select their records. Anonymous users cannot select raw maps, revisions, private assets, reports, roles, or unlisted records; allowlisted security-definer functions return only effective public DTOs.
+
+The client hashes the original Blob, asks the server for a five-minute content-type-restricted R2 `PUT` URL, uploads directly, and completes the asset only after a server-side `HEAD` size/type check. Sync then creates an immutable revision. A stale base revision is preserved as a conflict and does not replace the remote current revision. Downloads are authorized through a short-lived `GET` URL and checksum-verified before a cloud-only record is inserted into IndexedDB.
+
+The additive community migration adds immutable publication records, exact revision isolation, revocable Unlisted capability hashes, map-level moderation holds, anonymous reports, generated profiles, roles, and an append-only action log. Publishing downloads the verified private source server-side, rechecks its checksum, decodes it with bounded pixels, rotates from metadata, and writes immutable sanitized WebP map/thumbnail objects before atomically advancing `current_publication_id`. An exact current revision plus identical sharing fields is rejected before the source image is read, preventing duplicate R2 derivatives while retaining idempotent retry recovery. See [`cloud-sync-foundation.md`](cloud-sync-foundation.md), [`community-publishing-foundation.md`](community-publishing-foundation.md), [`publication-deduplication.md`](publication-deduplication.md), and [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
 
 ## Portable backup pipeline
 
@@ -99,4 +123,4 @@ The service worker registers only in production. It precaches the home page, My 
 
 ## Testing and validation
 
-Vitest covers georeferencing math, Mercator conversion, basemap configuration, GPS projection, saved-map consolidation, backup package integrity/conflict planning, comparison mesh/render transforms, and view rotation. Repository validation commands are documented in [`../README.md`](../README.md#quality-commands).
+Vitest covers georeferencing math, Mercator conversion, basemap configuration, GPS projection, saved-map consolidation, backup package integrity/conflict planning, comparison mesh/render transforms, view rotation, cloud payloads, community contracts, and unchanged-publication matching. Repository validation and release commands are documented in [`../README.md`](../README.md#quality-commands) and [`OPERATIONS.md`](OPERATIONS.md).

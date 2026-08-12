@@ -73,6 +73,16 @@ async function writeSavedMap(map: LocalSavedMap) {
   }
 }
 
+export async function storeDownloadedCloudMap(map: LocalSavedMap) {
+  const existing = await readSavedMapRecord(map.id);
+  if (existing) {
+    return { map: existing, added: false } as const;
+  }
+
+  await writeSavedMap(map);
+  return { map, added: true } as const;
+}
+
 async function writeSavedMaps(maps: readonly LocalSavedMap[]) {
   if (maps.length === 0) {
     return;

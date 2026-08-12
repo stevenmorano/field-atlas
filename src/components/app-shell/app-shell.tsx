@@ -13,6 +13,7 @@ const DESKTOP_LINKS = [
   { href: "/", label: "Discover" },
   { href: "/anchor", label: "Anchor lab" },
   { href: "/my-maps", label: "My maps" },
+  { href: "/account", label: "Account" },
 ] as const;
 
 export function AppShell({ children }: AppShellProps) {

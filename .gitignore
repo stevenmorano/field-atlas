@@ -20,6 +20,7 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 .dev-server*.log
+*.fieldatlas
 
 # operating system
 .DS_Store

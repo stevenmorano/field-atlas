@@ -1,26 +1,30 @@
 # Community Georeferenced Maps — Product and Technical Design
 
-Status: Validated public-beta target with a working local prototype  
-Original design date: 2026-08-09  
-Last reviewed: 2026-08-10  
+Status: Validated public-beta design with a working local/cloud/community beta
+Original design date: 2026-08-09
+Last reviewed: 2026-08-12
 Working product name: Field Atlas (final branding remains open)
 
 ## Document scope and implementation snapshot
 
-This document describes the intended public beta, including accounts, cloud storage, publishing, community contributions, reports, and moderation. Those future sections are requirements, not claims about the current deployment.
+This document describes the intended public beta. The configured development environment now runs optional accounts, private cloud sync, original R2 transfer, immutable revisions, Public/Unlisted publishing, anonymous discovery/viewing/reporting, minimal profiles, and administrator check/hide/restore. Fresh environments still require [`docs/CLOUD_SETUP.md`](docs/CLOUD_SETUP.md). Volunteer improvements and the larger-launch safeguards in [`docs/community-publishing-foundation.md`](docs/community-publishing-foundation.md) remain future work.
 
 The repository currently implements:
 
-- a Next.js 16 App Router PWA shell and sample Discover catalog;
+- a Next.js 16 App Router PWA shell and live Discover catalog with an unconfigured sample fallback;
 - local raster upload and a split Anchor Lab with Street, Satellite, and Hybrid MapLibre basemaps;
 - similarity, affine, and triangulated piecewise-affine forward/inverse georeferencing;
 - 90-degree working-view rotation, deep pan/zoom, undo/redo, mesh warnings, and draft autosave;
 - a multi-map IndexedDB My Maps library with structured metadata;
 - a versioned, non-destructive portable backup/restore flow for local maps and the active draft;
 - a high-resolution foreground-GPS viewer that keeps readings on-device; and
-- a locally warped Compare overlay with opacity and fit controls.
+- a locally warped Compare overlay with opacity and fit controls;
+- email/password accounts and explicit private cross-device sync using Supabase and R2;
+- instant Public/Unlisted publication using sanitized public image derivatives;
+- anonymous public map viewing, foreground GPS, offline save, and reporting; and
+- public profiles, contribution milestones, moderation, and exact-publication deduplication.
 
-Accounts, public map data, server storage, PDF conversion, cropping, reports, volunteer anchoring, favorites, production offline packages, and native applications remain planned. Current behavior is documented in [`README.md`](README.md) and [`docs/README.md`](docs/README.md).
+PDF conversion, cropping, volunteer anchoring, favorites, richer duplicate grouping/ranking, larger-scale operational safeguards, production release verification, and native applications remain planned. Cloud behavior activates only when the managed services are configured. Current behavior is documented in [`README.md`](README.md) and [`docs/README.md`](docs/README.md).
 
 ## 1. Product vision
 
@@ -96,7 +100,7 @@ The optional on-location “I'm here” correction may be added later but is not
 
 ### Guests
 
-Guests can browse, search, preview, open, and download public maps without an account.
+Guests can browse, search, preview, open, download, and report public maps without an account. They can also open an Unlisted map when given its secret link.
 
 ### Accounts
 
@@ -108,7 +112,7 @@ An account is required to:
 - Favorite maps.
 - Synchronize personal catalog data.
 - Submit anchor contributions.
-- Report public maps.
+- Receive public attribution, maintain a profile, and earn reviewed contribution milestones.
 
 ### GPS privacy
 
@@ -299,7 +303,7 @@ Claims expire so abandoned work cannot lock a map indefinitely. Administrator re
 
 ## 17. Reports and moderation
 
-Only public maps accept community reports. Report reasons include:
+Effective Public and Unlisted maps accept anonymous community reports without requiring an account. Report reasons include:
 
 - GPS inaccurate.
 - Wrong coverage or location.
@@ -309,9 +313,9 @@ Only public maps accept community reports. Report reasons include:
 - Broken download.
 - Other, with written notes.
 
-The report automatically includes map and revision identifiers but never the reporter's current GPS coordinate. Reports enter the administrator inbox and may notify the owner.
+The report automatically includes map and immutable publication identifiers but never the reporter's current GPS coordinate. Reports enter the administrator inbox and may notify the owner. Rate limiting and spam controls do not make ordinary reporters create an account.
 
-The administrator can mark resolved, request changes, unpublish, restore, group duplicates, or remove material when required. Unpublishing preserves the source and history during investigation.
+Public and Unlisted maps become usable immediately after the owner publishes them; administrator checking happens afterward. The administrator can mark checked, request changes while leaving the map visible, hide and hold the map, restore it, group duplicates, or remove material when required. Hiding preserves the source and history during investigation and blocks owner republication until restored.
 
 ## 18. Duplicate maps and variants
 
@@ -697,6 +701,18 @@ Decision: rotate the Anchor Lab view in 90-degree steps while preserving origina
 Alternatives: rewrite the source Blob and every anchor, or use a visual transform without coordinate conversion.  
 Reason: sideways maps become easier to align without risking source quality or georeference integrity.
 
+### D-021 — Explicit private sync before publishing
+
+Decision: add optional Supabase accounts and RLS metadata/revisions plus private R2 originals while retaining every IndexedDB map. A public-ready local map syncs as a private server draft; cloud sync alone never publishes it.
+Alternatives: automatic background upload, last-write-wins replacement, or making first sync public.
+Reason: this establishes the production storage path and cross-device recovery without risking local work, privacy, or catalog quality.
+
+### D-022 — Instant explicit publishing with post-publication moderation
+
+Decision: after private sync, an email-verified owner may explicitly make a frozen revision Public or Unlisted immediately. Public enters Discover; Unlisted uses a revocable secret link. Both enter an administrator queue without blocking use. Anonymous viewing and reporting remain account-free, while hidden maps receive an administrator-only publication hold.
+Alternatives: administrator preapproval, Unlisted-only access until review, or automatically publishing every cloud sync.
+Reason: someone preparing a park, trail, historical, or venue map may need to use and share it immediately. Explicit publication, safe derivatives, structured rights attestation, reports, rollback, and post-publication controls bound the risk without making one administrator a bottleneck. See [`docs/community-publishing-foundation.md`](docs/community-publishing-foundation.md).
+
 ## 28. Open implementation decisions
 
 These do not block the product design but require prototype evidence or setup choices:
@@ -708,7 +724,7 @@ These do not block the product design but require prototype evidence or setup ch
 - Whether PMTiles fully satisfies original-orientation and overlay viewing, or an equivalent single-file pyramid is preferable.
 - Maximum file, page, pixel, and decompression limits.
 - Exact confidence, residual, and fold thresholds.
-- Authentication methods offered at beta launch.
+- Whether Google sign-in is worth adding after the implemented email/password flow is production-verified.
 - Administrator notification channel for reports and volunteer submissions.
 
 ## 29. Source references

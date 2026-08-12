@@ -1,7 +1,7 @@
 # Local anchor draft persistence
 
 Status: implemented and extended  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Understanding summary
 
@@ -24,7 +24,7 @@ Last reviewed: 2026-08-10
 
 1. **IndexedDB draft (selected):** stores structured data and binary image Blobs, works offline, and survives reloads.
 2. **localStorage:** rejected because large image data exceeds its practical synchronous limits.
-3. **Server draft:** deferred because accounts, uploads, privacy, and synchronization are outside the local phase.
+3. **Server-only draft:** rejected because cloud accounts now complement rather than replace the offline local draft.
 
 ## Current design
 
@@ -49,4 +49,4 @@ When linked to a finished map, later autosaves also update that saved map's imag
 - Selected debounced autosave plus a manual checkpoint.
 - Added named finished maps without changing the single-active-draft model.
 - Persisted editor rotation as optional view state, not as transformed source pixels.
-- Added local portable export while keeping accounts, server sync, and sharing in separate increments.
+- Added local portable export, then optional private sync and sharing as separate layers that do not replace the draft.

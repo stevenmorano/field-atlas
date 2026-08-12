@@ -1,16 +1,17 @@
 # Local data and privacy
 
 Status: current implementation  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Storage model
 
-Field Atlas currently uses the browser's IndexedDB database `field-atlas-local` at schema version 2.
+Field Atlas currently uses the browser's IndexedDB database `field-atlas-local` at schema version 3.
 
 | Store | Key | Cardinality | Purpose |
 | --- | --- | --- | --- |
 | `anchor-drafts` | `current` | One active record | Resume unfinished or actively edited anchor work |
 | `saved-maps` | UUID | Multiple records | Named maps shown in My Maps |
+| `cloud-sync-state` | Map UUID | At most one per synced map | Last accepted account/revision/fingerprint; never image or GPS data |
 
 No user-created map record is stored in `localStorage`. Image files remain binary `Blob` values so high-resolution originals do not incur base64 expansion.
 
@@ -42,7 +43,7 @@ The optional rotation field is backward-compatible: older records without it ope
 - optional intentional-variant marker; and
 - optional import lineage for a divergent same-ID map preserved as an imported copy.
 
-Metadata contains title, description, place name, subject, visual style, map date kind/year, activity tags, source, and private/public-ready intent. Public-ready currently has no network effect.
+Metadata contains title, description, place name, subject, visual style, map date kind/year, activity tags, source, and private/public-ready intent. Private sync alone never makes it anonymously visible. A separate explicit Share action freezes and publishes one synced revision.
 
 ## Write behavior
 
@@ -65,36 +66,50 @@ This behavior is a recovery aid, not perceptual duplicate detection. Different s
 
 Foreground location readings are held in React/browser memory only. They are used to:
 
-- sort the sample Discover catalog after a one-shot request; or
+- sort the public Discover catalog (or unconfigured sample fallback) after a one-shot request; or
 - project a live viewer reading onto a saved image.
 
 The current application does not write live coordinates, accuracy readings, viewing history, or traveled paths to IndexedDB, URLs, analytics, logs, or an application server. The saved anchor coordinates are map calibration data, not a user's live location.
 
 The viewer starts `watchPosition` only after **Find me** and clears it when hidden or unmounted.
 
-## Network boundary
+## Network and cloud boundary
 
-User image Blobs, metadata, and anchors are not uploaded by the current build. Network requests may still go to:
+Without configuration, user image Blobs, metadata, and anchors are not uploaded. With an account, **Sync privately** or **Sync all local maps** explicitly sends:
+
+- the unchanged original image to the owner's private R2 key;
+- structured map metadata and anchor pairs to RLS-protected Postgres tables; and
+- image dimensions, MIME type, byte count, and SHA-256 checksum used to verify the transfer.
+
+Live coordinates, accuracy readings, viewing history, and traveled paths are excluded. Other network requests may go to:
 
 - the Next.js development/production web origin;
 - OpenStreetMap raster tiles;
 - Esri World Imagery; or
 - a configured MapLibre style and its referenced providers.
+- Supabase Auth/Postgres after account sign-in; or
+- Cloudflare R2 through short-lived single-object URLs during explicit sync/download.
 
 The production service worker caches same-origin application resources, not a complete cross-origin basemap.
 
 ## Data-loss risks
 
-IndexedDB is durable browser storage, not a backup. Data may be lost if the user clears site data, removes the browser profile, uses private-browsing storage, changes origin, or the browser evicts storage. There is currently no cross-device synchronization.
+IndexedDB is durable browser storage, not a backup. Data may be lost if the user clears site data, removes the browser profile, uses private-browsing storage, changes origin, or the browser evicts storage. Configured account sync can create and restore a separate copy, but it is explicit rather than continuous background backup.
 
 Field Atlas now provides a portable, versioned `.fieldatlas` backup containing active saved maps, exact original image bytes, anchors and metadata, plus the active unfinished draft. Import validates the package before writing, skips exact duplicates, preserves divergent same-ID records as separate imported copies, and keeps the current draft by default.
 
-The downloaded file is still user-managed. Field Atlas cannot verify that it remains available after download and does not upload it to a cloud account. Losing both the browser data and every exported copy still loses the library.
+The downloaded file is still user-managed and is never automatically uploaded to an account. Losing browser data and every exported copy can still lose any maps that were never explicitly synced.
 
 ## Portable backup privacy boundary
 
 Backup creation and import run locally. The package is a binary container with a versioned JSON manifest and SHA-256-addressed raw image payloads; images are not resized, recompressed, or base64-expanded. The package excludes live GPS readings, location history, browsing history, and secrets. Because it may contain private maps and filenames, treat the file as sensitive data.
 
-## Future server boundary
+## Public server boundary
 
-The validated public-beta design adds accounts, cloud files, public metadata, revisions, reports, and contributions. Its invariant remains that live GPS does not leave the device. See [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
+Configured community publishing supports explicit instant Public or tokenized Unlisted access, post-publication administrator checks, anonymous reports, generated profiles, allowlisted public DTOs, and sanitized public derivatives. The unchanged original remains private in R2. Public DTOs necessarily include the published map's anchor coordinates because GPS projection depends on them, but exclude email, private filenames/keys, working revisions, live GPS, viewing history, and traveled paths. Anonymous report throttling stores a rotating HMAC token rather than a raw network address. See [`community-publishing-foundation.md`](community-publishing-foundation.md) and [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
+
+Unlisted URLs are bearer capabilities: anyone who receives the complete secret link can open that frozen publication until it is superseded, unpublished, hidden, or otherwise revoked. Store and transmit those links accordingly. The token is hashed before database storage and must never be placed in logs or committed documentation.
+
+## Secrets and repository boundary
+
+`.env.local` is ignored by Git. Supabase project URLs and browser publishable keys are client configuration, while R2 credentials and `REPORT_FINGERPRINT_SECRET` are server-only secrets and must never use a `NEXT_PUBLIC_` prefix. Portable `.fieldatlas` files, local recovery JSON, public share links, and browser database exports may contain private material and should not be committed. See [`CLOUD_SETUP.md`](CLOUD_SETUP.md) and [`OPERATIONS.md`](OPERATIONS.md).

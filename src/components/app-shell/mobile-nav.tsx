@@ -4,16 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type IconProps = Readonly<{
-  name: "discover" | "anchor" | "maps";
+  name: "discover" | "anchor" | "maps" | "account";
 }>;
 
 const LINKS = [
   { href: "/", label: "Discover", icon: "discover" },
   { href: "/anchor", label: "Anchor", icon: "anchor" },
   { href: "/my-maps", label: "My maps", icon: "maps" },
+  { href: "/account", label: "Account", icon: "account" },
 ] as const;
 
 function NavIcon({ name }: IconProps) {
+  if (name === "account") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M5.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   if (name === "anchor") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">

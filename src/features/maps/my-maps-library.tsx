@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { writeCurrentAnchorDraft } from "@/features/anchor/local-draft-store";
 import { MapBackupControls } from "@/features/backup/map-backup-controls";
+import { CloudMapSyncPanel } from "@/features/cloud/cloud-map-sync-panel";
 import { listSavedMaps } from "@/features/maps/local-saved-map-store";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 
@@ -254,11 +255,16 @@ export function MyMapsLibrary() {
         </>
       )}
 
+      <CloudMapSyncPanel
+        localMaps={maps}
+        onLocalLibraryChanged={() => setLibraryVersion((version) => version + 1)}
+      />
+
       <MapBackupControls onImportComplete={() => setLibraryVersion((version) => version + 1)} />
 
       <aside className="local-storage-note">
-        <strong>On this device only</strong>
-        <span>Server backup and cross-device syncing will come with accounts. Clearing browser data removes local maps.</span>
+        <strong>Local copies stay local</strong>
+        <span>Cloud sync adds a separate account copy. Keep a .fieldatlas backup before clearing browser data.</span>
       </aside>
     </main>
   );

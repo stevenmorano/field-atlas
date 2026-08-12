@@ -1,8 +1,11 @@
 "use client";
 
+import Image from "next/image";
+import type { Route } from "next";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
+import type { PublicMapSummary } from "@/features/community/community-contract";
 import { CATALOG_MAPS, type CatalogMap } from "@/features/discover/catalog-data";
 import { distanceBetweenMeters, formatDistance } from "@/features/discover/geo-distance";
 import type { GeographicPoint } from "@/lib/georeferencing/types";
@@ -17,6 +20,12 @@ type SubjectFilter = "all" | CatalogMap["subject"];
 type MapWithDistance = Readonly<{
   map: CatalogMap;
   centerDistanceMeters: number | null;
+  coverageDistanceMeters: number | null;
+  isCoveringLocation: boolean;
+}>;
+
+type PublicMapWithDistance = Readonly<{
+  map: PublicMapSummary;
   coverageDistanceMeters: number | null;
   isCoveringLocation: boolean;
 }>;
@@ -102,11 +111,81 @@ function CatalogCard({ entry }: Readonly<{ entry: MapWithDistance }>) {
   );
 }
 
+function publicDateLabel(map: PublicMapSummary) {
+  if (map.mapDateKind === "current") return "Current";
+  if (map.mapDateKind === "exact" && map.mapYear !== null) return String(map.mapYear);
+  if (map.mapDateKind === "approximate" && map.mapYear !== null) return `About ${map.mapYear}`;
+  return "Date unknown";
+}
+
+function publicSubjectMatches(map: PublicMapSummary, subject: SubjectFilter) {
+  if (subject === "all") return true;
+  const normalized = map.subject.toLocaleLowerCase();
+  if (subject === "historic") return normalized.includes("historic");
+  if (subject === "trail") return normalized.includes("trail");
+  if (subject === "park") return normalized.includes("park") || normalized.includes("preserve");
+  return normalized.includes("zoo") || normalized.includes("amusement") || normalized.includes("venue");
+}
+
+function PublicCatalogCard({ entry }: Readonly<{ entry: PublicMapWithDistance }>) {
+  const { map } = entry;
+  return (
+    <article className="catalog-card catalog-card--public">
+      <Link className="public-map-thumbnail" href={`/maps/${map.mapId}` as Route} aria-label={`Open ${map.title}`}>
+        <Image
+          src={`/api/community/assets/${map.publicAssetId}?variant=thumbnail`}
+          alt=""
+          fill
+          unoptimized
+          sizes="(min-width: 75rem) 25vw, (min-width: 48rem) 50vw, 100vw"
+        />
+        <span>{publicDateLabel(map)}</span>
+      </Link>
+      <div className="catalog-card__body">
+        <div className="catalog-card__status-row">
+          {entry.isCoveringLocation ? <span className="status-pill status-pill--here">You are on this map</span> : null}
+          {map.adminChecked ? <span className="status-pill">Admin checked</span> : <span className="status-pill">Community map</span>}
+        </div>
+        <div>
+          <p className="catalog-card__place">{map.placeName || map.subject}</p>
+          <h3><Link href={`/maps/${map.mapId}` as Route}>{map.title}</Link></h3>
+        </div>
+        <dl className="catalog-card__facts">
+          <div><dt>Map</dt><dd>{publicDateLabel(map)}</dd></div>
+          <div><dt>Anchors</dt><dd>{map.anchorCount}</dd></div>
+          <div><dt>By</dt><dd><Link href={`/profiles/${map.username}` as Route}>{map.username}</Link></dd></div>
+        </dl>
+        <div className="catalog-card__footer">
+          <span>{entry.isCoveringLocation ? "Covers your position" : entry.coverageDistanceMeters === null ? map.visualStyle : `${formatDistance(entry.coverageDistanceMeters)} away`}</span>
+          <Link className="text-button" href={`/maps/${map.mapId}` as Route}>Open map <span aria-hidden="true">→</span></Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function DiscoverExperience() {
   const [location, setLocation] = useState<LocationState>({ status: "idle" });
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState<SubjectFilter>("all");
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
+  const [publicMaps, setPublicMaps] = useState<readonly PublicMapSummary[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/community/maps", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Community catalog is not ready.");
+        return response.json() as Promise<readonly PublicMapSummary[]>;
+      })
+      .then((maps) => {
+        if (!cancelled) setPublicMaps(maps);
+      })
+      .catch(() => {
+        if (!cancelled) setPublicMaps(null);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const catalog = useMemo(() => {
     const currentPoint = location.status === "ready" ? location.point : null;
@@ -145,7 +224,40 @@ export function DiscoverExperience() {
     });
   }, [deferredQuery, location, subject]);
 
-  const coveringCount = catalog.filter((entry) => entry.isCoveringLocation).length;
+  const publicCatalog = useMemo(() => {
+    if (publicMaps === null) return [];
+    const currentPoint = location.status === "ready" ? location.point : null;
+    return publicMaps
+      .filter((map) => publicSubjectMatches(map, subject))
+      .filter((map) => deferredQuery.length === 0 || `${map.title} ${map.placeName} ${map.mapYear ?? ""} ${map.subject}`.toLocaleLowerCase().includes(deferredQuery))
+      .map((map): PublicMapWithDistance => {
+        if (
+          !currentPoint || map.coverage.latitude === null || map.coverage.longitude === null ||
+          map.coverage.radiusMeters === null
+        ) {
+          return { map, coverageDistanceMeters: null, isCoveringLocation: false };
+        }
+        const centerDistance = distanceBetweenMeters(currentPoint, {
+          latitude: map.coverage.latitude,
+          longitude: map.coverage.longitude,
+        });
+        return {
+          map,
+          coverageDistanceMeters: Math.max(0, centerDistance - map.coverage.radiusMeters),
+          isCoveringLocation: centerDistance <= map.coverage.radiusMeters,
+        };
+      })
+      .toSorted((first, second) => {
+        if (first.isCoveringLocation !== second.isCoveringLocation) return first.isCoveringLocation ? -1 : 1;
+        if (first.coverageDistanceMeters !== null && second.coverageDistanceMeters !== null) return first.coverageDistanceMeters - second.coverageDistanceMeters;
+        return Date.parse(second.map.publishedAt) - Date.parse(first.map.publishedAt);
+      });
+  }, [deferredQuery, location, publicMaps, subject]);
+
+  const usingCommunityCatalog = publicMaps !== null;
+  const coveringCount = usingCommunityCatalog
+    ? publicCatalog.filter((entry) => entry.isCoveringLocation).length
+    : catalog.filter((entry) => entry.isCoveringLocation).length;
 
   function requestLocation() {
     if (!("geolocation" in navigator)) {
@@ -206,7 +318,7 @@ export function DiscoverExperience() {
         <div className="catalog-map" aria-label="Illustrative community map catalog preview">
           <div className="catalog-map__label">
             <span>Catalog view</span>
-            <strong>{location.status === "ready" ? `${coveringCount} covering you` : "4 sample maps"}</strong>
+            <strong>{location.status === "ready" ? `${coveringCount} covering you` : usingCommunityCatalog ? `${publicMaps.length} shared maps` : "4 sample maps"}</strong>
           </div>
           <span className="catalog-map__water" />
           <span className="catalog-map__road catalog-map__road--one" />
@@ -252,7 +364,11 @@ export function DiscoverExperience() {
           ))}
         </div>
 
-        {catalog.length > 0 ? (
+        {usingCommunityCatalog && publicCatalog.length > 0 ? (
+          <div className="catalog-grid">
+            {publicCatalog.map((entry) => <PublicCatalogCard entry={entry} key={entry.map.publicationId} />)}
+          </div>
+        ) : !usingCommunityCatalog && catalog.length > 0 ? (
           <div className="catalog-grid">
             {catalog.map((entry) => (
               <CatalogCard entry={entry} key={entry.map.id} />

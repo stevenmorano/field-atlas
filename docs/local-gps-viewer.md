@@ -1,7 +1,7 @@
 # Local GPS viewer
 
 Status: implemented  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Accepted outcome
 
@@ -15,7 +15,7 @@ The implemented slice includes:
 - a blue position dot and locally transformed accuracy area;
 - recentering plus warnings outside the anchored mesh or image;
 - permission, timeout, availability, and unsupported-browser messages;
-- local reopening without an account; and
+- local reopening and anonymous use of downloaded Public/Unlisted maps; and
 - links to Compare and anchor editing.
 
 ## Assumptions and requirements
@@ -50,4 +50,4 @@ Alternatives rejected for this slice were making a live basemap the primary view
 - GPS is explicitly initiated and ephemeral.
 - A live watch runs only while the viewer is visible.
 - Poor accuracy and extrapolation are shown honestly.
-- Accounts, sharing, navigation, routes, and track history remain out of scope.
+- The viewer never uploads GPS; navigation, routes, track history, and location sharing remain out of scope.

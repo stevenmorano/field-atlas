@@ -1,7 +1,7 @@
 # Anchor workspace rotation
 
 Status: implemented  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Understanding summary
 

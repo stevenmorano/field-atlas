@@ -1,14 +1,14 @@
 # Local saved maps
 
 Status: implemented  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Understanding summary
 
 - A working draft can become a durable, named map without losing its original image or anchors.
 - The implementation is local-first and works in the current browser without accounts.
-- Structured metadata supports eventual public catalog filters.
-- New maps default to private; public-ready records intent only and does not publish.
+- Structured metadata supports implemented public catalog fields and future richer filters.
+- New maps default to private; public-ready records intent only and never publishes without the separate cloud Share action.
 - My Maps lists multiple locally saved maps rather than only the active draft.
 - A saved map can be viewed, compared, or reopened for later anchor improvements.
 
@@ -25,7 +25,7 @@ Last reviewed: 2026-08-10
 
 1. **Versioned IndexedDB map library (selected):** preserves Blobs offline, supports multiple named records, and leaves a path to later sync.
 2. **localStorage:** rejected because image Blobs do not fit safely and serialization is synchronous.
-3. **Immediate backend:** deferred because it adds authentication, access policy, object storage, billing, and conflicts before local viewing is proven.
+3. **Immediate backend:** originally deferred until local viewing was proven; the optional Supabase/R2 path was added later without replacing IndexedDB.
 
 ## Current design
 
@@ -41,7 +41,7 @@ My Maps also exposes one portable backup containing every active/canonical recor
 
 - **L-001 - Local named maps first:** selected IndexedDB before accounts.
 - **L-002 - Preserve the current draft:** database version 2 adds `saved-maps` beside `anchor-drafts`.
-- **L-003 - Private default:** public-ready is future publishing intent only.
+- **L-003 - Private default:** public-ready is intent only; explicit sync and Share are separate operations.
 - **L-004 - Structured metadata now:** catalog facets are stored separately from the title.
 - **L-005 - Autosync linked maps:** later anchor edits update their stable record.
 - **L-006 - No deletion:** user work is retained while recovery/export is unfinished.

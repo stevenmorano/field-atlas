@@ -1,7 +1,8 @@
 export const LOCAL_DATABASE_NAME = "field-atlas-local";
-export const LOCAL_DATABASE_VERSION = 2;
+export const LOCAL_DATABASE_VERSION = 3;
 export const ANCHOR_DRAFTS_STORE = "anchor-drafts";
 export const SAVED_MAPS_STORE = "saved-maps";
+export const CLOUD_SYNC_STATE_STORE = "cloud-sync-state";
 
 export function openLocalDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -16,6 +17,10 @@ export function openLocalDatabase() {
 
       if (!database.objectStoreNames.contains(SAVED_MAPS_STORE)) {
         database.createObjectStore(SAVED_MAPS_STORE, { keyPath: "id" });
+      }
+
+      if (!database.objectStoreNames.contains(CLOUD_SYNC_STATE_STORE)) {
+        database.createObjectStore(CLOUD_SYNC_STATE_STORE, { keyPath: "mapId" });
       }
     };
     request.onsuccess = () => resolve(request.result);

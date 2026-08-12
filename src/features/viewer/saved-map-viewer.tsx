@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   useCallback,
@@ -14,8 +14,10 @@ import {
   useState,
 } from "react";
 
-import { readSavedMap } from "@/features/maps/local-saved-map-store";
+import { readSavedMap, storeDownloadedCloudMap } from "@/features/maps/local-saved-map-store";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
+import type { PublicMapDetail } from "@/features/community/community-contract";
+import { CommunityReportDialog } from "@/features/community/community-report-dialog";
 import { writeCurrentAnchorDraft } from "@/features/anchor/local-draft-store";
 import {
   projectGpsReading,
@@ -104,7 +106,10 @@ function locationSummary(
 
 export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const shareToken = searchParams.get("share") ?? "";
   const [map, setMap] = useState<LocalSavedMap | null>(null);
+  const [publicMap, setPublicMap] = useState<PublicMapDetail | null>(null);
   const [imageSource, setImageSource] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<ViewerLoadStatus>("loading");
   const [viewportSize, setViewportSize] = useState<ViewportSize>({ width: 0, height: 0 });
@@ -114,6 +119,9 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const [projectedLocation, setProjectedLocation] = useState<ProjectedGpsReading | null>(null);
   const [following, setFollowing] = useState(false);
   const [openingEditor, setOpeningEditor] = useState(false);
+  const [savingOffline, setSavingOffline] = useState(false);
+  const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const transformRef = useRef(transform);
   const fitScaleRef = useRef(1);
@@ -139,26 +147,66 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     let cancelled = false;
     let objectUrl: string | null = null;
 
-    void readSavedMap(mapId)
-      .then((savedMap) => {
-        if (cancelled) {
-          return;
-        }
-        if (!savedMap) {
-          setLoadStatus("missing");
+    void (async () => {
+      try {
+        const savedMap = await readSavedMap(mapId);
+        if (cancelled) return;
+        if (savedMap) {
+          objectUrl = URL.createObjectURL(savedMap.imageBlob);
+          setMap(savedMap);
+          setImageSource(objectUrl);
+          setLoadStatus("ready");
           return;
         }
 
-        objectUrl = URL.createObjectURL(savedMap.imageBlob);
-        setMap(savedMap);
+        const shareQuery = shareToken ? `?share=${encodeURIComponent(shareToken)}` : "";
+        const detailResponse = await fetch(`/api/community/maps/${mapId}${shareQuery}`, { cache: "no-store" });
+        if (!detailResponse.ok) {
+          if (!cancelled) setLoadStatus(detailResponse.status === 404 ? "missing" : "error");
+          return;
+        }
+        const detail = await detailResponse.json() as PublicMapDetail;
+        const imageResponse = await fetch(
+          `/api/community/assets/${detail.publicAssetId}?variant=map${shareToken ? `&share=${encodeURIComponent(shareToken)}` : ""}`,
+          { cache: "no-store" },
+        );
+        if (!imageResponse.ok) throw new Error("Public image could not be loaded.");
+        const imageBlob = await imageResponse.blob();
+        if (cancelled) return;
+        const publishedAt = Date.parse(detail.publishedAt);
+        const publicSavedMap: LocalSavedMap = {
+          id: detail.mapId,
+          version: 1,
+          createdAt: Number.isFinite(publishedAt) ? publishedAt : Date.now(),
+          updatedAt: Number.isFinite(publishedAt) ? publishedAt : Date.now(),
+          metadata: {
+            title: detail.title,
+            description: detail.description,
+            placeName: detail.placeName,
+            subject: detail.subject,
+            visualStyle: detail.visualStyle,
+            mapDateKind: detail.mapDateKind,
+            mapYear: detail.mapYear,
+            activities: detail.activities,
+            source: detail.sourceUrl,
+            visibility: "public-ready",
+          },
+          imageName: `${detail.title}.webp`,
+          imageBlob,
+          imageDimensions: detail.image,
+          anchors: detail.anchors,
+          targetZoom: detail.targetZoom,
+          basemapMode: detail.basemapMode,
+        };
+        objectUrl = URL.createObjectURL(imageBlob);
+        setPublicMap(detail);
+        setMap(publicSavedMap);
         setImageSource(objectUrl);
         setLoadStatus("ready");
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadStatus("error");
-        }
-      });
+      } catch {
+        if (!cancelled) setLoadStatus("error");
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -166,7 +214,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [mapId]);
+  }, [mapId, shareToken]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
@@ -324,7 +372,11 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   }, [disableFollowing, loadStatus, zoomAt]);
 
   function beginPointerGesture(event: ReactPointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 && event.pointerType === "mouse") {
+    const target = event.target;
+    const isControl = target instanceof Element && Boolean(target.closest(
+      "button, a, input, select, textarea, label, [role='button'], [data-map-gesture-ignore]",
+    ));
+    if ((event.button !== 0 && event.pointerType === "mouse") || isControl) {
       return;
     }
 
@@ -561,6 +613,20 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     }
   }
 
+  async function saveOffline() {
+    if (!map || !publicMap) return;
+    setSavingOffline(true);
+    setOfflineMessage(null);
+    try {
+      const result = await storeDownloadedCloudMap(map);
+      setOfflineMessage(result.added ? "Saved to My Maps for offline use." : "This map is already saved offline.");
+    } catch {
+      setOfflineMessage("This map could not be saved offline.");
+    } finally {
+      setSavingOffline(false);
+    }
+  }
+
   if (loadStatus === "loading") {
     return (
       <main className="saved-map-viewer-state" id="main-content">
@@ -604,7 +670,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
       <section className="saved-map-viewer" aria-label={`${map.metadata.title} map viewer`}>
         <header className="saved-map-viewer__header">
           <div className="saved-map-viewer__identity">
-            <Link href="/my-maps" aria-label="Back to My Maps">←</Link>
+            <Link href={publicMap ? "/" : "/my-maps"} aria-label={publicMap ? "Back to Discover" : "Back to My Maps"}>←</Link>
             <div>
               <p>{map.metadata.placeName || "Saved map"}</p>
               <h1>{map.metadata.title}</h1>
@@ -612,15 +678,20 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
           </div>
           <div className="saved-map-viewer__header-actions">
             <span>{map.anchors.length} anchors</span>
-            <Link
-              className="button button--quiet saved-map-viewer__compare-action"
-              href={`/maps/${map.id}/compare` as Route}
-            >
-              Compare
-            </Link>
-            <button className="button button--quiet saved-map-viewer__edit-action" type="button" onClick={() => void openAnchorEditor()} disabled={openingEditor}>
-              {openingEditor ? "Opening…" : "Edit anchors"}
-            </button>
+            {publicMap ? (
+              <>
+                <Link className="button button--quiet" href={`/profiles/${publicMap.author.username}` as Route}>By {publicMap.author.username}</Link>
+                <button className="button button--quiet" type="button" onClick={() => void saveOffline()} disabled={savingOffline}>{savingOffline ? "Saving…" : "Save offline"}</button>
+                <button className="button button--quiet" type="button" onClick={() => setReporting(true)}>Report</button>
+              </>
+            ) : (
+              <>
+                <Link className="button button--quiet saved-map-viewer__compare-action" href={`/maps/${map.id}/compare` as Route}>Compare</Link>
+                <button className="button button--quiet saved-map-viewer__edit-action" type="button" onClick={() => void openAnchorEditor()} disabled={openingEditor}>
+                  {openingEditor ? "Opening…" : "Edit anchors"}
+                </button>
+              </>
+            )}
           </div>
         </header>
 
@@ -699,9 +770,18 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
               )}
             </div>
             <p className="saved-map-viewer__privacy">Location stays on this device and is never saved.</p>
+            {offlineMessage ? <p className="saved-map-viewer__privacy" role="status">{offlineMessage}</p> : null}
           </section>
         </div>
       </section>
+      {reporting && publicMap ? (
+        <CommunityReportDialog
+          mapId={publicMap.mapId}
+          publicationId={publicMap.publicationId}
+          shareToken={shareToken}
+          onClose={() => setReporting(false)}
+        />
+      ) : null}
     </main>
   );
 }

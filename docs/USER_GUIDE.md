@@ -1,11 +1,11 @@
 # User guide
 
-Status: working local prototype  
-Last reviewed: 2026-08-10
+Status: working local-first prototype with optional private sync and community publishing
+Last reviewed: 2026-08-12
 
 ## Important storage warning
 
-Your working library is stored in this browser profile on this website origin. Before clearing site data or switching browsers/devices, open My Maps and choose **Back up all maps**. Keep the downloaded `.fieldatlas` file somewhere private and import it in the destination browser. Field Atlas does not synchronize it automatically.
+Your working library is stored in this browser profile on this website origin. Before clearing site data or switching browsers/devices, open My Maps and choose **Back up all maps**. Optional account sync is explicit rather than automatic, so retain a private `.fieldatlas` backup too.
 
 ## Create and anchor a map
 
@@ -41,7 +41,7 @@ A draft and a finished map are related but different:
 - **Map details** edits its structured metadata.
 - Starting fresh replaces the active draft, not the finished record in My Maps.
 
-Metadata includes title, description, place, subject, visual style, map date, activities, source, and private/public-ready intent. Public-ready is only a label in this prototype; it does not upload or publish anything.
+Metadata includes title, description, place, subject, visual style, map date, activities, source, and private/public-ready intent. Cloud sync alone never publishes it. Public or Unlisted access always requires the separate Share action.
 
 ## Use My Maps
 
@@ -53,6 +53,43 @@ Open `/my-maps` to see all active saved records. Search by title, place, type, y
 - **Start another map** enters the safe new-map check before replacing the current draft.
 
 If the same source image was accidentally saved more than once, Field Atlas consolidates exact-source records and preserves the strongest anchor set. Superseded records remain in storage and are not deleted.
+
+## Sign in and privately sync maps
+
+Cloud controls appear when the operator has completed [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
+
+1. Open `/account` and create or sign in to an email/password account.
+2. Return to `/my-maps` and find **Private cloud**.
+3. Choose **Sync privately** for one map or **Sync all local maps**.
+4. Wait for the status message. The existing local image and anchors remain unchanged.
+5. On another signed-in device, cloud-only maps appear in the same panel. Choose **Download to device** to checksum-verify and insert that map into the second browser's local library.
+
+Repeated syncs create immutable revisions. If another device changed the same map after this browser's last accepted revision, Field Atlas preserves the new upload as a conflict instead of silently replacing the remote current version. Conflict review UI is planned; keep both local copies and the `.fieldatlas` backup in the meantime.
+
+## Share a map publicly or by link
+
+Community sharing appears after the operator applies all migrations in [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
+
+1. Privately sync the latest map revision first.
+2. In the Private cloud list, choose **Share** beside that map.
+3. Choose **Public** to list it in Discover immediately, or **Unlisted** to create an immediate secret link that is absent from Discover.
+4. Select why you are allowed to share it and add a source, license, or attribution when applicable.
+5. Confirm that other people can open the separate shared copy immediately. The unchanged original remains private.
+6. Use the returned link or open the public map. **Make private** stops future access without removing local/private-cloud work; it cannot recall a copy someone already downloaded.
+
+Public visitors do not need an account to open the map, use foreground GPS, save it offline, visit the uploader profile, or report a problem. Public maps enter the administrator's post-publication queue but do not wait there before becoming usable.
+
+Opening Share again for the exact same synced revision and the same sharing fields shows **Already published**. Field Atlas will not create another publication or process another public image copy until the revision or a sharing choice changes. Switching visibility, rights/source/credit fields, or syncing changed anchors, details, or imagery creates a legitimate new publication.
+
+## Maintain a public profile
+
+The first sign-in creates a generated username so email is never exposed publicly. Open `/account` to change the username and short bio. The public page at `/profiles/[username]` shows only public contribution information, a generated avatar, and implemented milestones. It never shows email, private maps, live location, viewing history, or a home location.
+
+## Report or moderate a public map
+
+Anyone can select **Report a problem** on an effective Public or Unlisted map without creating an account. Choose a category and optionally explain the problem; do not include private or precise personal location information in the note.
+
+Administrators open `/moderation`. **Mark checked** records a routine beta check, **Request changes** leaves the map visible with a reason, **Hide map** removes anonymous access and places a map-wide publishing hold, and **Restore map** clears that hold and returns it to review. **Admin checked** is not a guarantee of positional accuracy, map quality, safety, ownership, or legal status.
 
 ## Back up or restore My Maps
 
@@ -110,3 +147,7 @@ The file picker accepts these formats, but successful display depends on native 
 ### Starting a new map shows the previous one
 
 Use `/anchor/new` and confirm **Start fresh map**. `/anchor` intentionally resumes the active draft.
+
+### Share says Already published
+
+That exact cloud revision and sharing setup are already live. Close the dialog if no update is needed. To publish an update, first edit and sync the map or change a visible sharing field. Use **Make private** only when you intend to stop anonymous access.

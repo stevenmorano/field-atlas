@@ -1,7 +1,7 @@
 # Local map Compare mode
 
 Status: implemented  
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Understanding summary
 
@@ -49,4 +49,4 @@ Controls include a 0-100% opacity slider (55% default), show/hide overlay, Stree
 - Use synchronized Canvas 2D now while keeping mesh generation renderer-independent.
 - Default to 55% opacity and retain a simple show/hide action.
 - Keep the rectangular source border and defer cutlines.
-- Keep the feature browser-local and server-free.
+- Keep rendering browser-local; cloud/public maps must first provide an authorized local image copy.
