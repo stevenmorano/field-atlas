@@ -30,7 +30,7 @@ export function CommunityReportDialog({ mapId, publicationId, shareToken, onClos
       });
       const body = await response.json() as { error?: unknown };
       if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : "Report could not be sent.");
-      setMessage("Thanks. The report is in the review queue.");
+      setMessage("Thanks. The report is in the review queue. Anonymous reports cannot be tracked after submission.");
       setNote("");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Report could not be sent.");

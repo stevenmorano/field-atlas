@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseProfileUpdate,
+  parseModerationRequest,
   parsePublishMapRequest,
   parseReportRequest,
+  publicationModerationLabel,
   publicationMatchesSettings,
   type OwnerPublication,
 } from "@/features/community/community-contract";
@@ -47,6 +49,19 @@ describe("community contracts", () => {
       idempotencyKey: requestId,
       expectedPublicationId: null,
     })).toThrow("Name the open license");
+  });
+
+  it("requires a source for public-domain and open-license claims", () => {
+    expect(() => parsePublishMapRequest({
+      visibility: "public",
+      rightsBasis: "public_domain",
+      sourceUrl: "",
+      licenseName: "",
+      attribution: "Town archive",
+      shareToken: null,
+      idempotencyKey: requestId,
+      expectedPublicationId: null,
+    })).toThrow("source link");
   });
 
   it("requires a high-entropy-shaped token for an unlisted publication", () => {
@@ -100,5 +115,27 @@ describe("community contracts", () => {
       ...settings,
       visibility: "unlisted",
     })).toBe(false);
+  });
+
+  it("requires reasons for corrective moderation actions", () => {
+    expect(() => parseModerationRequest({
+      publicationId: publication.id,
+      action: "hidden",
+      reason: "   ",
+    })).toThrow("Add a reason");
+    expect(parseModerationRequest({
+      publicationId: publication.id,
+      action: "admin_checked",
+      reason: "",
+    }).action).toBe("admin_checked");
+  });
+
+  it("describes effective owner-facing moderation states precisely", () => {
+    expect(publicationModerationLabel("public", "changes_requested"))
+      .toBe("Listed publicly · updates requested · still visible");
+    expect(publicationModerationLabel("unlisted", "needs_review"))
+      .toBe("Shared by link · awaiting admin check");
+    expect(publicationModerationLabel("public", "hidden"))
+      .toBe("Temporarily hidden by administrator");
   });
 });

@@ -1,6 +1,6 @@
 # Implementation plan
 
-Status: local, private-cloud, and core community beta active in development; moderation and production release verification next
+Status: local, private-cloud, and core community beta active in development; moderation release gate passed and production verification next
 Last updated: 2026-08-12
 
 ## Delivery strategy
@@ -60,12 +60,21 @@ Implemented design details:
 
 ## Next increments
 
-1. **Moderation release gate:** exercise anonymous report, administrator check, changes requested, hide/hold, restore, and owner-facing consequences against the configured services.
-2. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
-3. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
-4. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
-5. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
-6. **Usability pass:** improve the mobile Anchor Lab layout, touch precision/magnifier, anchor movement, residual feedback, and accessibility QA.
+1. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
+2. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
+3. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
+4. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
+5. **Usability pass:** improve the mobile Anchor Lab layout, touch precision/magnifier, anchor movement, residual feedback, and accessibility QA.
+
+## Completed increment: moderation release gate
+
+- Exercised anonymous reporting, administrator check, changes requested, hide/hold, restore, and final checked state against the configured services.
+- Confirmed changes-requested publications remain accessible, while hidden publications disappear from Discover, profiles, detail, and asset delivery.
+- Confirmed restoration resumes access without replacing the immutable publication, private revision, original image, or browser-local map.
+- Replaced blocking moderation prompts with accessible in-app reason dialogs and required reasons for corrective actions.
+- Made publication detail and authorized asset redirects non-cacheable so every request rechecks effective access.
+- Blocked owner unpublishing in the application while a moderation hold is active and added the matching additive database migration.
+- Tightened rights-source validation, anonymous-report confirmation, and owner-facing moderation labels.
 
 ## Public beta phases
 

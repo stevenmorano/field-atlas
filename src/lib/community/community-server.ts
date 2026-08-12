@@ -54,7 +54,7 @@ type OwnerPublicationRow = Readonly<{
   id: string;
   revision_id: string;
   visibility: OwnerPublication["visibility"];
-  moderation_status: string;
+  moderation_status: OwnerPublication["moderationStatus"];
   published_at: string;
   rights_basis: OwnerPublication["rightsBasis"];
   source_url: string;

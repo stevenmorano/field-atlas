@@ -26,7 +26,7 @@ The current build is a local-first functional beta with optional account sync an
 - Use generated public usernames, contribution profiles, simple milestones, and an administrator post-publication queue.
 - Install the production build as a PWA with a small offline application shell.
 
-Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, and publication-deduplication smoke tests. Production deployment and the complete moderation lifecycle are the next release gates. PDF conversion, cropping, and full production offline packages remain future work.
+Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, publication-deduplication, and the complete administrator moderation lifecycle. Production deployment is the next release gate. PDF conversion, cropping, and full production offline packages remain future work.
 
 ## Run locally
 

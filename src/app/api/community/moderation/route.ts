@@ -1,3 +1,4 @@
+import { parseModerationRequest } from "@/features/community/community-contract";
 import { cloudErrorResponse, CloudApiError, requireCloudUser } from "@/lib/cloud/cloud-api";
 
 export async function GET() {
@@ -14,15 +15,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as Record<string, unknown>;
-    if (typeof body.publicationId !== "string" || typeof body.action !== "string" || typeof body.reason !== "string" || body.reason.length > 2000) {
-      throw new CloudApiError("Moderation action is invalid.", 400);
-    }
+    const input = parseModerationRequest(await request.json());
     const { supabase } = await requireCloudUser();
     const { error } = await supabase.rpc("moderate_publication", {
-      p_publication_id: body.publicationId,
-      p_action: body.action,
-      p_reason: body.reason,
+      p_publication_id: input.publicationId,
+      p_action: input.action,
+      p_reason: input.reason,
     });
     if (error) throw new CloudApiError(error.message || "Moderation action failed.", 403);
     return Response.json({ success: true });

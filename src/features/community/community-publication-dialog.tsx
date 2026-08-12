@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useState } from "react";
 import type { CloudMapSummary } from "@/features/cloud/cloud-map-contract";
 import {
   publicationMatchesSettings,
+  publicationModerationLabel,
   type OwnerPublicationStatus,
   type PublicationVisibility,
   type RightsBasis,
@@ -227,10 +228,12 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
             {status?.publication ? (
               <div className="community-dialog__current">
                 <span>Currently {status.publication.visibility}</span>
-                <strong>{status.publication.moderationStatus === "admin_checked" ? "Admin checked" : "Visible - awaiting a routine check"}</strong>
-                {status.publication.visibility === "public"
-                  ? <Link href={`/maps/${map.id}`}>Open shared map</Link>
-                  : <span>The existing private link remains active.</span>}
+                <strong>{publicationModerationLabel(status.publication.visibility, status.publication.moderationStatus)}</strong>
+                {status.publicationHold || status.publication.moderationStatus === "hidden"
+                  ? <span>Anonymous access is suspended until an administrator restores the map.</span>
+                  : status.publication.visibility === "public"
+                    ? <Link href={`/maps/${map.id}`}>Open shared map</Link>
+                    : <span>The existing private link remains active.</span>}
               </div>
             ) : null}
             {publicationUnchanged ? (
@@ -268,8 +271,8 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
             </label>
           ) : null}
           <label className="community-field">
-            <span>Source link (recommended)</span>
-            <input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={2000} placeholder="https://..." />
+            <span>Source link {rightsBasis === "public_domain" || rightsBasis === "open_license" ? "(required)" : "(recommended)"}</span>
+            <input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={2000} required={rightsBasis === "public_domain" || rightsBasis === "open_license"} placeholder="https://..." />
           </label>
           <label className="community-field">
             <span>Credit or attribution (optional)</span>
@@ -284,7 +287,7 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
             <button className="button button--signal" type="submit" disabled={busy || loading || !confirmed || !cloudIsCurrent || status?.publicationHold === true || publicationUnchanged}>
               {busy ? "Preparing..." : publicationUnchanged ? "Already published" : visibility === "public" ? "Publish publicly now" : "Create unlisted link now"}
             </button>
-            {status?.currentPublicationId ? <button className="button button--quiet" type="button" onClick={() => void unpublish()} disabled={busy}>Make private</button> : null}
+            {status?.currentPublicationId ? <button className="button button--quiet" type="button" onClick={() => void unpublish()} disabled={busy || status.publicationHold} title={status.publicationHold ? "An administrator must restore this map before sharing can change." : undefined}>Make private</button> : null}
             <button className="button button--quiet" type="button" onClick={onClose} disabled={busy}>Cancel</button>
           </div>
             </form>

@@ -26,7 +26,7 @@ export async function GET(request: Request, context: Context) {
     const row = firstRpcRow(data);
     const signedUrl = await createR2DownloadUrl(String(row.object_key ?? ""), String(row.mime_type ?? "image/webp"));
     const response = NextResponse.redirect(signedUrl, 307);
-    response.headers.set("Cache-Control", shareToken ? "private, no-store" : "public, max-age=300");
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
     return response;
   } catch (error) {
     return cloudErrorResponse(error);

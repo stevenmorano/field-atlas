@@ -1,4 +1,5 @@
 import { cloudErrorResponse, CloudApiError, requireCloudUser } from "@/lib/cloud/cloud-api";
+import { readOwnerPublicationStatus } from "@/lib/community/community-server";
 
 type Context = Readonly<{ params: Promise<{ mapId: string }> }>;
 
@@ -7,7 +8,14 @@ export async function POST(request: Request, context: Context) {
     const body = await request.json() as { expectedPublicationId?: unknown };
     if (typeof body.expectedPublicationId !== "string") throw new CloudApiError("Publication ID is invalid.", 400);
     const { mapId } = await context.params;
-    const { supabase } = await requireCloudUser();
+    const { supabase, user } = await requireCloudUser();
+    const status = await readOwnerPublicationStatus(supabase, mapId, user.id);
+    if (status.publicationHold) {
+      throw new CloudApiError(
+        status.publicationHoldReason || "This map is on a moderation hold and cannot be made private until an administrator restores it.",
+        403,
+      );
+    }
     const { error } = await supabase.rpc("unpublish_map", {
       p_map_id: mapId,
       p_expected_publication_id: body.expectedPublicationId,

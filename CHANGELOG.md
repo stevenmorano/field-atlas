@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-12 - Moderation release hardening
+
+- Exercised the complete live anonymous-report and administrator check/changes-requested/hide/restore lifecycle without replacing the existing publication or private map data.
+- Replaced blocking moderation prompts with accessible reason dialogs and validated corrective-action reasons server-side.
+- Prevented cached detail and asset-authorization redirects from outliving a moderation hide.
+- Blocked owner unpublishing while a map-level hold is active in the application and added an additive database enforcement migration.
+- Added precise owner-facing access labels, held-map controls, required source links for public-domain/open-license claims, report follow-up expectations, and regression tests.
+
 ## 2026-08-12 - Publication hardening
 
 - Prevented an unchanged synced revision with identical sharing settings from creating duplicate publication rows and duplicate R2 image derivatives.

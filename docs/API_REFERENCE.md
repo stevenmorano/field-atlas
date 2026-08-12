@@ -12,7 +12,7 @@ These Next.js App Router handlers support the Field Atlas web application. They 
 - Owner access is additionally constrained by Postgres row-level security and narrow database functions.
 - Public and Unlisted reads return allowlisted publication DTOs rather than raw tables.
 - Unlisted `share` query values are bearer secrets. Never log, persist in analytics, or include them in public referrers.
-- Private and Unlisted responses use non-shared cache headers. Public map data is briefly cacheable.
+- Publication detail and authorized asset redirects use `private, no-store` so a hide or hold is checked on every request. Discover summaries remain independently reloadable.
 
 ## Authentication callback
 
@@ -38,8 +38,8 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 | Method and path | Access | Input | Result/cache |
 | --- | --- | --- | --- |
 | `GET /api/community/maps?q=&subject=&before=` | Anonymous | Bounded search, optional subject, optional cursor | Up to 24 effective Public summaries. |
-| `GET /api/community/maps/[mapId]?share=TOKEN` | Anonymous | Public map ID; token only for Unlisted | Effective frozen publication DTO. Public: `max-age=60`; Unlisted: `private, no-store`. |
-| `GET /api/community/assets/[assetId]?variant=map|thumbnail&share=TOKEN` | Anonymous | Effective public asset and optional token | Authorized `307` redirect to short-lived sanitized WebP delivery. |
+| `GET /api/community/maps/[mapId]?share=TOKEN` | Anonymous | Public map ID; token only for Unlisted | Effective frozen publication DTO with `private, no-store` authorization semantics. |
+| `GET /api/community/assets/[assetId]?variant=map|thumbnail&share=TOKEN` | Anonymous | Effective public asset and optional token | Non-cacheable authorized `307` redirect to short-lived sanitized WebP delivery. |
 | `GET /api/community/profiles/[username]` | Anonymous | Public username | Public profile, effective Public contributions, and milestones. |
 | `GET /api/community/profile` | Signed-in member | None | Own username, bio, avatar seed, and optional staff role. |
 | `PATCH /api/community/profile` | Signed-in member | Username and bio | Updates allowlisted public profile fields. Email is never returned. |

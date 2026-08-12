@@ -44,6 +44,8 @@ Use a test or intentionally published map:
 5. Confirm the owner cannot bypass the map-level hold by publishing again.
 6. Restore the map and confirm it returns to the queue and public access resumes.
 
+The application route blocks owner unpublishing while a hold is active. Apply migration `202608120001_enforce_moderation_hold_on_unpublish.sql` so the database function enforces the same rule even if it is called outside the application route.
+
 Do not describe **Admin checked** as proof of accuracy, ownership, legality, or safety.
 
 ## Production deployment checklist

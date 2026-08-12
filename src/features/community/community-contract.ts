@@ -6,16 +6,19 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
 export const PUBLICATION_VISIBILITIES = ["public", "unlisted"] as const;
 export const RIGHTS_BASES = ["own_or_authorized", "permission", "public_domain", "open_license"] as const;
 export const REPORT_CATEGORIES = ["gps_inaccurate", "bad_quality", "wrong_details", "duplicate", "copyright", "unsafe_or_abusive", "other"] as const;
+export const MODERATION_ACTIONS = ["admin_checked", "changes_requested", "hidden", "restored"] as const;
 
 export type PublicationVisibility = typeof PUBLICATION_VISIBILITIES[number];
 export type RightsBasis = typeof RIGHTS_BASES[number];
 export type ReportCategory = typeof REPORT_CATEGORIES[number];
+export type ModerationAction = typeof MODERATION_ACTIONS[number];
+export type ModerationStatus = "needs_review" | "admin_checked" | "changes_requested" | "hidden";
 
 export type OwnerPublication = Readonly<{
   id: string;
   revisionId: string;
   visibility: PublicationVisibility;
-  moderationStatus: string;
+  moderationStatus: ModerationStatus;
   publishedAt: string;
   rightsBasis: RightsBasis;
   sourceUrl: string;
@@ -65,6 +68,24 @@ export function publicationMatchesSettings(
     && publication.licenseName.trim() === settings.licenseName.trim()
     && publication.attribution.trim() === settings.attribution.trim(),
   );
+}
+
+export function publicationModerationLabel(
+  visibility: PublicationVisibility,
+  moderationStatus: ModerationStatus,
+) {
+  if (moderationStatus === "hidden") return "Temporarily hidden by administrator";
+  if (moderationStatus === "admin_checked") {
+    return "Admin checked · not an accuracy or ownership guarantee";
+  }
+  if (moderationStatus === "changes_requested") {
+    return visibility === "public"
+      ? "Listed publicly · updates requested · still visible"
+      : "Shared by link · updates requested · still visible";
+  }
+  return visibility === "public"
+    ? "Listed publicly · awaiting admin check"
+    : "Shared by link · awaiting admin check";
 }
 
 export type PublicMapSummary = Readonly<{
@@ -134,6 +155,10 @@ export function parsePublishMapRequest(value: unknown): PublishMapRequest {
   if (value.rightsBasis === "open_license" && !licenseName) {
     throw new Error("Name the open license.");
   }
+  const sourceUrl = text(value.sourceUrl, "Source URL", 2000);
+  if ((value.rightsBasis === "public_domain" || value.rightsBasis === "open_license") && !sourceUrl) {
+    throw new Error("Add the source link for a public-domain or openly licensed map.");
+  }
   const expectedPublicationId = value.expectedPublicationId === null
     ? null
     : uuid(value.expectedPublicationId, "Current publication");
@@ -147,12 +172,29 @@ export function parsePublishMapRequest(value: unknown): PublishMapRequest {
   return {
     visibility: value.visibility as PublicationVisibility,
     rightsBasis: value.rightsBasis as RightsBasis,
-    sourceUrl: text(value.sourceUrl, "Source URL", 2000),
+    sourceUrl,
     licenseName,
     attribution: text(value.attribution, "Attribution", 2000),
     shareToken,
     idempotencyKey: uuid(value.idempotencyKey, "Publication request ID"),
     expectedPublicationId,
+  };
+}
+
+export function parseModerationRequest(value: unknown) {
+  if (!isRecord(value)) throw new Error("Moderation action is invalid.");
+  if (!MODERATION_ACTIONS.includes(value.action as ModerationAction)) {
+    throw new Error("Moderation action is invalid.");
+  }
+  const action = value.action as ModerationAction;
+  const reason = text(value.reason, "Moderation reason", 2000);
+  if (action !== "admin_checked" && !reason) {
+    throw new Error("Add a reason for this moderation action.");
+  }
+  return {
+    publicationId: uuid(value.publicationId, "Publication"),
+    action,
+    reason,
   };
 }
 
