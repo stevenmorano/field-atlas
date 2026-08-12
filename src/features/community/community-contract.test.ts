@@ -51,8 +51,8 @@ describe("community contracts", () => {
     })).toThrow("Name the open license");
   });
 
-  it("requires a source for public-domain and open-license claims", () => {
-    expect(() => parsePublishMapRequest({
+  it("allows a public-domain claim without an online source", () => {
+    expect(parsePublishMapRequest({
       visibility: "public",
       rightsBasis: "public_domain",
       sourceUrl: "",
@@ -61,7 +61,7 @@ describe("community contracts", () => {
       shareToken: null,
       idempotencyKey: requestId,
       expectedPublicationId: null,
-    })).toThrow("source link");
+    }).sourceUrl).toBe("");
   });
 
   it("requires a high-entropy-shaped token for an unlisted publication", () => {

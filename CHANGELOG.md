@@ -1,12 +1,17 @@
 # Changelog
 
+## 2026-08-12 - Beta-readiness backlog
+
+- Added [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) as the maintained release checklist for interaction bugs, public Compare, revision updates, rotation, saving language, favorites, and production verification.
+- Reordered the implementation plan around the beta-readiness interaction and public-workflow gates before broader invitations.
+
 ## 2026-08-12 - Moderation release hardening
 
 - Exercised the complete live anonymous-report and administrator check/changes-requested/hide/restore lifecycle without replacing the existing publication or private map data.
 - Replaced blocking moderation prompts with accessible reason dialogs and validated corrective-action reasons server-side.
 - Prevented cached detail and asset-authorization redirects from outliving a moderation hide.
 - Blocked owner unpublishing while a map-level hold is active in the application and added an additive database enforcement migration.
-- Added precise owner-facing access labels, held-map controls, required source links for public-domain/open-license claims, report follow-up expectations, and regression tests.
+- Added precise owner-facing access labels, held-map controls, optional source/reference notes for physical and public-domain maps, report follow-up expectations, and regression tests.
 
 ## 2026-08-12 - Publication hardening
 

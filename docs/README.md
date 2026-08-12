@@ -14,6 +14,7 @@ This folder separates documentation of the **working local-first beta and config
 | [`CLOUD_SETUP.md`](CLOUD_SETUP.md) | Operators and developers | Configure Supabase, R2, private sync, and second-device verification |
 | [`OPERATIONS.md`](OPERATIONS.md) | Operators and maintainers | Backups, moderation, deployment, verification, incidents, and rollback |
 | [`../IMPLEMENTATION_PLAN.md`](../IMPLEMENTATION_PLAN.md) | Maintainers | Completed slices, immediate work, and later phases |
+| [`BETA_READINESS.md`](BETA_READINESS.md) | Maintainers, testers, and product collaborators | Release blockers, usability bugs, beta decisions, and verification checklist |
 | [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md) | Product and engineering | Validated long-term public-beta design |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Testers and maintainers | Implemented feature history |
 

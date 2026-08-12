@@ -155,10 +155,7 @@ export function parsePublishMapRequest(value: unknown): PublishMapRequest {
   if (value.rightsBasis === "open_license" && !licenseName) {
     throw new Error("Name the open license.");
   }
-  const sourceUrl = text(value.sourceUrl, "Source URL", 2000);
-  if ((value.rightsBasis === "public_domain" || value.rightsBasis === "open_license") && !sourceUrl) {
-    throw new Error("Add the source link for a public-domain or openly licensed map.");
-  }
+  const sourceUrl = text(value.sourceUrl, "Source or reference", 2000);
   const expectedPublicationId = value.expectedPublicationId === null
     ? null
     : uuid(value.expectedPublicationId, "Current publication");

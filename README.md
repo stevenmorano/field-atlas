@@ -26,7 +26,7 @@ The current build is a local-first functional beta with optional account sync an
 - Use generated public usernames, contribution profiles, simple milestones, and an administrator post-publication queue.
 - Install the production build as a PWA with a small offline application shell.
 
-Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, publication-deduplication, and the complete administrator moderation lifecycle. Production deployment is the next release gate. PDF conversion, cropping, and full production offline packages remain future work.
+Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, publication-deduplication, and the complete administrator moderation lifecycle. The beta-readiness gate is tracked in [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md); reliable interaction, public Compare, clear revision updates, and production verification remain before broader invitations. PDF conversion, cropping, persistent community favorites, and full production offline packages remain future work.
 
 ## Run locally
 
@@ -91,6 +91,7 @@ Start with the [documentation index](docs/README.md).
 - [Operations and release runbook](docs/OPERATIONS.md)
 - [Local data and privacy](docs/DATA_AND_PRIVACY.md)
 - [Cloud setup](docs/CLOUD_SETUP.md)
+- [Beta readiness](docs/BETA_READINESS.md)
 - [Product and technical design](PRODUCT_DESIGN.md)
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Changelog](CHANGELOG.md)

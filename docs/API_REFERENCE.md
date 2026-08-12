@@ -49,7 +49,7 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 | Method and path | Access | Input | Result |
 | --- | --- | --- | --- |
 | `GET /api/community/maps/[mapId]/status` | Signed-in owner | Path map ID | Current synced/published revision, moderation hold, and frozen sharing settings. |
-| `POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication. Runs in the Node runtime with a 60-second handler limit. |
+| `POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. |
 | `POST /api/community/maps/[mapId]/unpublish` | Signed-in owner | Expected current publication ID | Ends anonymous access without deleting local/private work. |
 
 Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images.

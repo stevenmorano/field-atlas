@@ -271,8 +271,8 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
             </label>
           ) : null}
           <label className="community-field">
-            <span>Source link {rightsBasis === "public_domain" || rightsBasis === "open_license" ? "(required)" : "(recommended)"}</span>
-            <input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={2000} required={rightsBasis === "public_domain" || rightsBasis === "open_license"} placeholder="https://..." />
+            <span>Source or reference (optional)</span>
+            <input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={2000} placeholder="https://... or a note about where it came from" />
           </label>
           <label className="community-field">
             <span>Credit or attribution (optional)</span>

@@ -1,13 +1,13 @@
 # Implementation plan
 
-Status: local, private-cloud, and core community beta active in development; moderation release gate passed and production verification next
+Status: local, private-cloud, and core community beta active in development; moderation release gate passed and beta-readiness interaction/workflow gate next
 Last updated: 2026-08-12
 
 ## Delivery strategy
 
 The project deliberately proved the risky georeferencing core locally before adding accounts or infrastructure. The current application now carries that browser-local workflow through optional private cloud sync and instant community publishing without making either service a prerequisite for map creation or use.
 
-The next steps prioritize release verification and operational safety around the working community path, followed by map-preparation and editing improvements.
+The next steps prioritize plain-language public workflows, reliable map interaction, and release verification around the working community path, followed by map-preparation and editing improvements. See [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) for the maintained tester-facing gate.
 
 ## Completed foundation
 
@@ -60,11 +60,14 @@ Implemented design details:
 
 ## Next increments
 
-1. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
-2. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
-3. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
-4. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
-5. **Usability pass:** improve the mobile Anchor Lab layout, touch precision/magnifier, anchor movement, residual feedback, and accessibility QA.
+1. **Beta-readiness interaction gate:** fix viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, and maximum-zoom dragging; verify desktop and mobile touch behavior.
+2. **Public workflow gate:** expose Compare to anonymous public visitors, clarify Sync changes → Update public map, and ship optional source/reference metadata.
+3. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
+4. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
+5. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
+6. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
+7. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
+8. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
 
 ## Completed increment: moderation release gate
 
@@ -74,7 +77,7 @@ Implemented design details:
 - Replaced blocking moderation prompts with accessible in-app reason dialogs and required reasons for corrective actions.
 - Made publication detail and authorized asset redirects non-cacheable so every request rechecks effective access.
 - Blocked owner unpublishing in the application while a moderation hold is active and added the matching additive database migration.
-- Tightened rights-source validation, anonymous-report confirmation, and owner-facing moderation labels.
+- Clarified rights declarations without blocking physical maps or personal photographs on a missing web source, alongside anonymous-report confirmation and owner-facing moderation labels.
 
 ## Public beta phases
 

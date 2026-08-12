@@ -73,7 +73,7 @@ Community sharing appears after the operator applies all migrations in [`CLOUD_S
 1. Privately sync the latest map revision first.
 2. In the Private cloud list, choose **Share** beside that map.
 3. Choose **Public** to list it in Discover immediately, or **Unlisted** to create an immediate secret link that is absent from Discover.
-4. Select why you are allowed to share it and add a source, license, or attribution when applicable.
+4. Select why you are allowed to share it and add a source, license, or attribution when available. A web source is optional; for a physical map or personal photograph, use the attribution field to explain what you know.
 5. Confirm that other people can open the separate shared copy immediately. The unchanged original remains private.
 6. Use the returned link or open the public map. **Make private** stops future access without removing local/private-cloud work; it cannot recall a copy someone already downloaded.
 
