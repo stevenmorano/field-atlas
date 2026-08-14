@@ -18,7 +18,9 @@ import { readSavedMap, storeDownloadedCloudMap } from "@/features/maps/local-sav
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 import type { PublicMapDetail } from "@/features/community/community-contract";
 import { CommunityReportDialog } from "@/features/community/community-report-dialog";
+import { createLocalMapFromPublicDetail } from "@/features/community/public-map-local";
 import { writeCurrentAnchorDraft } from "@/features/anchor/local-draft-store";
+import { compareMapHref } from "@/features/viewer/map-links";
 import {
   projectGpsReading,
   type ProjectedGpsReading,
@@ -119,7 +121,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const [projectedLocation, setProjectedLocation] = useState<ProjectedGpsReading | null>(null);
   const [following, setFollowing] = useState(false);
   const [openingEditor, setOpeningEditor] = useState(false);
-  const [savingOffline, setSavingOffline] = useState(false);
+  const [savingOnDevice, setSavingOnDevice] = useState(false);
   const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -173,31 +175,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         if (!imageResponse.ok) throw new Error("Public image could not be loaded.");
         const imageBlob = await imageResponse.blob();
         if (cancelled) return;
-        const publishedAt = Date.parse(detail.publishedAt);
-        const publicSavedMap: LocalSavedMap = {
-          id: detail.mapId,
-          version: 1,
-          createdAt: Number.isFinite(publishedAt) ? publishedAt : Date.now(),
-          updatedAt: Number.isFinite(publishedAt) ? publishedAt : Date.now(),
-          metadata: {
-            title: detail.title,
-            description: detail.description,
-            placeName: detail.placeName,
-            subject: detail.subject,
-            visualStyle: detail.visualStyle,
-            mapDateKind: detail.mapDateKind,
-            mapYear: detail.mapYear,
-            activities: detail.activities,
-            source: detail.sourceUrl,
-            visibility: "public-ready",
-          },
-          imageName: `${detail.title}.webp`,
-          imageBlob,
-          imageDimensions: detail.image,
-          anchors: detail.anchors,
-          targetZoom: detail.targetZoom,
-          basemapMode: detail.basemapMode,
-        };
+        const publicSavedMap = createLocalMapFromPublicDetail(detail, imageBlob);
         objectUrl = URL.createObjectURL(imageBlob);
         setPublicMap(detail);
         setMap(publicSavedMap);
@@ -613,17 +591,17 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     }
   }
 
-  async function saveOffline() {
+  async function saveOnDevice() {
     if (!map || !publicMap) return;
-    setSavingOffline(true);
+    setSavingOnDevice(true);
     setOfflineMessage(null);
     try {
       const result = await storeDownloadedCloudMap(map);
-      setOfflineMessage(result.added ? "Saved to My Maps for offline use." : "This map is already saved offline.");
+      setOfflineMessage(result.added ? "Saved to My Maps on this device." : "This map is already saved on this device.");
     } catch {
-      setOfflineMessage("This map could not be saved offline.");
+      setOfflineMessage("This map could not be saved on this device.");
     } finally {
-      setSavingOffline(false);
+      setSavingOnDevice(false);
     }
   }
 
@@ -680,13 +658,14 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
             <span>{map.anchors.length} anchors</span>
             {publicMap ? (
               <>
-                <Link className="button button--quiet" href={`/profiles/${publicMap.author.username}` as Route}>By {publicMap.author.username}</Link>
-                <button className="button button--quiet" type="button" onClick={() => void saveOffline()} disabled={savingOffline}>{savingOffline ? "Saving…" : "Save offline"}</button>
-                <button className="button button--quiet" type="button" onClick={() => setReporting(true)}>Report</button>
+                <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id, shareToken) as Route}>Compare with today</Link>
+                <Link className="button button--quiet saved-map-viewer__profile-action" href={`/profiles/${publicMap.author.username}` as Route}>By {publicMap.author.username}</Link>
+                <button className="button button--quiet saved-map-viewer__save-action" type="button" onClick={() => void saveOnDevice()} disabled={savingOnDevice}>{savingOnDevice ? "Saving…" : "Save on this device"}</button>
+                <button className="button button--quiet saved-map-viewer__report-action" type="button" onClick={() => setReporting(true)}>Report</button>
               </>
             ) : (
               <>
-                <Link className="button button--quiet saved-map-viewer__compare-action" href={`/maps/${map.id}/compare` as Route}>Compare</Link>
+                <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id) as Route}>Compare</Link>
                 <button className="button button--quiet saved-map-viewer__edit-action" type="button" onClick={() => void openAnchorEditor()} disabled={openingEditor}>
                   {openingEditor ? "Opening…" : "Edit anchors"}
                 </button>
@@ -694,6 +673,15 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
             )}
           </div>
         </header>
+
+        <div className="saved-map-viewer__toolbar">
+          <div className="saved-map-viewer__zoom" aria-label="Map zoom controls">
+            <button type="button" onClick={() => zoomAt(transform.zoom / ZOOM_BUTTON_FACTOR)} disabled={transform.zoom <= MIN_ZOOM} aria-label="Zoom out">−</button>
+            <button type="button" onClick={resetView}>Fit</button>
+            <button type="button" onClick={() => zoomAt(transform.zoom * ZOOM_BUTTON_FACTOR)} disabled={transform.zoom >= MAX_ZOOM} aria-label="Zoom in">+</button>
+            <span>{Math.round(transform.zoom * 100)}%</span>
+          </div>
+        </div>
 
         <div
           className="saved-map-viewport"
@@ -742,19 +730,17 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
             </div>
           ) : null}
 
-          <div className="saved-map-viewer__zoom" aria-label="Map zoom controls">
-            <button type="button" onClick={() => zoomAt(transform.zoom / ZOOM_BUTTON_FACTOR)} disabled={transform.zoom <= MIN_ZOOM} aria-label="Zoom out">−</button>
-            <button type="button" onClick={resetView}>Fit</button>
-            <button type="button" onClick={() => zoomAt(transform.zoom * ZOOM_BUTTON_FACTOR)} disabled={transform.zoom >= MAX_ZOOM} aria-label="Zoom in">+</button>
-            <span>{Math.round(transform.zoom * 100)}%</span>
-          </div>
-
-          <section className="gps-control-card" data-status={locationStatus} aria-live="polite">
+          <section
+            className="gps-control-card"
+            data-status={locationStatus}
+            data-gps-ready={gpsReady ? "yes" : "no"}
+            aria-live="polite"
+          >
             <div>
               <span className="gps-control-card__pulse" aria-hidden="true" />
               <div>
                 <strong>{locationStatus === "tracking" ? (following ? "Following you" : "Location on") : "Live position"}</strong>
-                <p>{statusMessage}</p>
+                <p className="gps-control-card__summary">{statusMessage}</p>
               </div>
             </div>
             <div className="gps-control-card__actions">

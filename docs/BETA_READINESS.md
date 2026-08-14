@@ -1,7 +1,7 @@
 # Beta readiness
 
 Status: beta backlog captured; the current production deployment is not yet the public beta release candidate
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-13
 
 This document is the working release checklist for people who did not build Field Atlas. It records the usability problems, workflow gaps, and product decisions that must be clear before inviting a broader group of testers.
 
@@ -12,6 +12,7 @@ The checklist is intentionally separate from the implementation history. A check
 ### 1. Keep map content visible
 
 - Move or inset viewer zoom controls so they do not cover meaningful map content.
+- Viewer zoom controls now sit in a compact toolbar above the map image instead of covering it.
 - Replace the large GPS status card with a compact status bar or collapsible control. GPS details, accuracy, Recenter, and Stop must remain discoverable without blocking the map.
 - Verify the layout at desktop, tablet, and phone widths.
 
@@ -19,11 +20,15 @@ The checklist is intentionally separate from the implementation history. A check
 
 - Add safe pan padding/overscroll so the top of the uploaded image can be moved below the **Your map** controls instead of being permanently hidden.
 - Reproduce and fix the defect where dragging stops at very high zoom until the user zooms out.
+- Maximum-zoom Anchor Lab panning now captures the gesture on the scroll viewport, with edge padding enabled while zoomed so image edges can be positioned below the pane controls.
+- Deferred mobile QA: pinch-to-zoom works on the current basemap, but the uploaded-map pane currently requires its on-pane zoom buttons. Add touch pinch zoom to the uploaded-map pane and verify it at normal and maximum zoom.
 - Verify pointer, touch, trackpad, wheel zoom, and 3,200% zoom behavior without changing anchor coordinates or existing browser maps.
 
 ### 3. Put Compare where public visitors can find it
 
 - Add **Compare with today** directly to every effective Public or Unlisted map.
+- Public and Unlisted viewers now show **Compare with today** directly in the header; Unlisted links carry their share token into Compare.
+- Discover now shows a clear retry state when the community catalog is unreachable instead of substituting sample map cards that could be mistaken for live publications.
 - Keep it available without an account and without requiring **Save on this device** first.
 - Reuse the existing warped overlay behavior: Street, Satellite, Hybrid, opacity, visibility, and Fit overlay.
 - Keep GPS viewing and comparison as separate, clearly labeled actions.
@@ -42,9 +47,12 @@ The checklist is intentionally separate from the implementation history. A check
 
 ### 6. Make saving language unambiguous
 
-- Rename anonymous **Save offline** to **Save on this device**.
+- The anonymous viewer action now reads **Save on this device**; verify the deployed release and keep the wording consistent in guides and support copy.
+- The Discover shelf now shows a loading state while the community catalog request is in flight, so configured deployments do not briefly show stale sample cards before real public maps arrive.
+- On phone-sized viewers, an active GPS session collapses to the status and action buttons so the map remains the focus; explanatory GPS text remains available for loading and error states.
 - Explain that browser-local saves can disappear when site data, private browsing data, or the browser profile is removed.
 - Keep private cloud copies, local My Maps records, and community favorites visibly separate.
+- Show the cloud-copy update time in addition to the date, using a readable local timestamp and a relative label such as **10 minutes ago** or **5 hours ago** so recent sync activity is easy to confirm.
 
 ## Beta feature decisions
 
@@ -84,4 +92,3 @@ Before calling the beta release candidate ready:
 4. Exercise signed-in sync, changed-revision publication, profile display, and moderation access.
 5. Confirm the Vercel deployment uses the intended Supabase/R2 environment values and callback origins.
 6. Confirm existing IndexedDB maps, cloud revisions, publications, and R2 objects are preserved; no reset, destructive migration, or broad cleanup is part of this release.
-

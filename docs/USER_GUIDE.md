@@ -77,7 +77,7 @@ Community sharing appears after the operator applies all migrations in [`CLOUD_S
 5. Confirm that other people can open the separate shared copy immediately. The unchanged original remains private.
 6. Use the returned link or open the public map. **Make private** stops future access without removing local/private-cloud work; it cannot recall a copy someone already downloaded.
 
-Public visitors do not need an account to open the map, use foreground GPS, save it offline, visit the uploader profile, or report a problem. Public maps enter the administrator's post-publication queue but do not wait there before becoming usable.
+Public visitors do not need an account to open the map, use foreground GPS, save it on this device for offline use, visit the uploader profile, or report a problem. A device save is browser-local; it is not an account favorite. Public maps enter the administrator's post-publication queue but do not wait there before becoming usable.
 
 Opening Share again for the exact same synced revision and the same sharing fields shows **Already published**. Field Atlas will not create another publication or process another public image copy until the revision or a sharing choice changes. Switching visibility, rights/source/credit fields, or syncing changed anchors, details, or imagery creates a legitimate new publication.
 
@@ -117,7 +117,7 @@ Locations outside the triangulated anchor area are labeled as extrapolated and a
 
 ## Compare with a current map
 
-Select **Compare** from My Maps or the viewer. Compare mode automatically rotates, scales, skews, and locally warps the source using its existing anchors.
+Select **Compare** from My Maps or **Compare with today** on a Public or Unlisted map viewer. Compare mode automatically rotates, scales, skews, and locally warps the source using its existing anchors. Public comparison works without an account or device save first.
 
 - Use **Opacity** to see both eras/layers.
 - Toggle the overlay without losing the current view.

@@ -30,7 +30,7 @@ Then smoke-test:
 3. A private sync leaves the local copy available.
 4. An unchanged Share dialog says **Already published**.
 5. A legitimate visibility change becomes publishable, but cancel it unless the change is intended.
-6. A signed-out window can open a Public map, use the GPS control, save it offline, open the profile, and submit a test report.
+6. A signed-out window can open a Public map, use the GPS control, choose **Save on this device**, open the profile, and submit a test report.
 7. Browser console logs contain no application errors.
 
 ## Moderation verification

@@ -32,7 +32,7 @@ All core map behavior remains browser-local. When configured, App Router handler
 
 | Route | Main component | Responsibility |
 | --- | --- | --- |
-| `/` | `DiscoverExperience` | Public catalog with sample fallback, search/filter, one-shot foreground location, distance ordering |
+| `/` | `DiscoverExperience` | Public catalog with a loading state, sample fallback only when the community request fails, search/filter, one-shot foreground location, distance ordering |
 | `/anchor` | `AnchorWorkbench` | Resume or create the active draft and edit anchors |
 | `/anchor/new` | `NewAnchorSession` | Warn before replacing the active draft and start a clean workspace |
 | `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, reopen, back up, or restore saved maps |

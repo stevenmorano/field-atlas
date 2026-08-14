@@ -85,6 +85,7 @@ const MIN_TARGET_ZOOM = 1;
 const MAX_TARGET_ZOOM = 32;
 const TARGET_ZOOM_BUTTON_FACTOR = 1.25;
 const PAN_THRESHOLD_PX = 6;
+const TARGET_EDGE_PADDING_PX = 64;
 const AUTOSAVE_DELAY_MS = 700;
 
 const INITIAL_HISTORY: AnchorHistory = {
@@ -160,8 +161,9 @@ function imagePointFromPointer(
   event: ReactPointerEvent<HTMLDivElement> | ReactMouseEvent<HTMLDivElement>,
   dimensions: ImageDimensions,
   rotation: TargetViewRotation,
+  boundsElement: HTMLElement = event.currentTarget,
 ): ImagePoint {
-  const bounds = event.currentTarget.getBoundingClientRect();
+  const bounds = boundsElement.getBoundingClientRect();
   const rotatedDimensions = rotatedImageDimensions(dimensions, rotation);
   const displayedPoint = {
     x:
@@ -222,6 +224,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
   const [mapSaveStatus, setMapSaveStatus] = useState<MapSaveStatus>("idle");
   const [mapSaveError, setMapSaveError] = useState<string | null>(null);
   const targetScrollRef = useRef<HTMLDivElement>(null);
+  const targetImageFrameRef = useRef<HTMLDivElement>(null);
   const targetZoomRef = useRef(1);
   const targetZoomFocusRef = useRef<ZoomFocus | null>(null);
   const targetPanRef = useRef<PanGesture | null>(null);
@@ -744,9 +747,10 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       Math.max(0, clientY === undefined ? container.clientHeight / 2 : clientY - bounds.top),
     );
 
+    const currentEdgePadding = currentZoom > 1 ? TARGET_EDGE_PADDING_PX : 0;
     targetZoomFocusRef.current = {
       contentXAtZoomOne: (container.scrollLeft + viewportX) / currentZoom,
-      contentYAtZoomOne: (container.scrollTop + viewportY) / currentZoom,
+      contentYAtZoomOne: (container.scrollTop - currentEdgePadding + viewportY) / currentZoom,
       viewportX,
       viewportY,
     };
@@ -763,8 +767,9 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       return;
     }
 
+    const nextEdgePadding = targetZoom > 1 ? TARGET_EDGE_PADDING_PX : 0;
     container.scrollLeft = focus.contentXAtZoomOne * targetZoom - focus.viewportX;
-    container.scrollTop = focus.contentYAtZoomOne * targetZoom - focus.viewportY;
+    container.scrollTop = focus.contentYAtZoomOne * targetZoom + nextEdgePadding - focus.viewportY;
     targetZoomFocusRef.current = null;
   }, [targetZoom]);
 
@@ -871,7 +876,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
 
       if (!gesture.moved && Math.hypot(deltaX, deltaY) >= PAN_THRESHOLD_PX) {
         gesture.moved = true;
-        event.currentTarget.dataset.panning = "true";
+        targetImageFrameRef.current?.setAttribute("data-panning", "true");
       }
 
       if (gesture.moved) {
@@ -883,9 +888,10 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       }
     }
 
-    setHoverImagePoint(
-      imagePointFromPointer(event, imageDimensions, targetRotation),
-    );
+    const frame = targetImageFrameRef.current;
+    if (frame) {
+      setHoverImagePoint(imagePointFromPointer(event, imageDimensions, targetRotation, frame));
+    }
   }
 
   function finishTargetPointer(event: ReactPointerEvent<HTMLDivElement>, cancelled = false) {
@@ -898,11 +904,14 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    delete event.currentTarget.dataset.panning;
+    targetImageFrameRef.current?.removeAttribute("data-panning");
     targetPanRef.current = null;
 
     if (!cancelled && !gesture.moved && !(event.target as HTMLElement).closest("button")) {
-      beginAnchor(imagePointFromPointer(event, imageDimensions, targetRotation));
+      const frame = targetImageFrameRef.current;
+      if (frame) {
+        beginAnchor(imagePointFromPointer(event, imageDimensions, targetRotation, frame));
+      }
     }
   }
 
@@ -1016,21 +1025,26 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
                 </div>
               </div>
             </div>
-            <div className="target-scroll" ref={targetScrollRef}>
+            <div
+              className="target-scroll"
+              ref={targetScrollRef}
+              data-zoomed={targetZoom > 1 ? "true" : "false"}
+              onPointerDown={handleTargetPointerDown}
+              onPointerMove={handleTargetPointerMove}
+              onPointerUp={(event) => finishTargetPointer(event)}
+              onPointerCancel={(event) => finishTargetPointer(event, true)}
+              onPointerLeave={() => {
+                if (!targetPanRef.current) {
+                  setHoverImagePoint(null);
+                }
+              }}
+            >
               <div
                 className="target-image-frame"
+                ref={targetImageFrameRef}
                 style={{
                   aspectRatio: targetDisplayDimensions.width.toString() + " / " + targetDisplayDimensions.height.toString(),
                   width: (targetZoom * 100).toString() + "%",
-                }}
-                onPointerDown={handleTargetPointerDown}
-                onPointerMove={handleTargetPointerMove}
-                onPointerUp={(event) => finishTargetPointer(event)}
-                onPointerCancel={(event) => finishTargetPointer(event, true)}
-                onPointerLeave={() => {
-                  if (!targetPanRef.current) {
-                    setHoverImagePoint(null);
-                  }
                 }}
               >
                 <div

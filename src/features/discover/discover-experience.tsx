@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import type { PublicMapSummary } from "@/features/community/community-contract";
-import { CATALOG_MAPS, type CatalogMap } from "@/features/discover/catalog-data";
 import { distanceBetweenMeters, formatDistance } from "@/features/discover/geo-distance";
 import type { GeographicPoint } from "@/lib/georeferencing/types";
 
@@ -15,14 +14,7 @@ type LocationState =
   | Readonly<{ status: "ready"; point: GeographicPoint; accuracyMeters: number }>
   | Readonly<{ status: "error"; message: string }>;
 
-type SubjectFilter = "all" | CatalogMap["subject"];
-
-type MapWithDistance = Readonly<{
-  map: CatalogMap;
-  centerDistanceMeters: number | null;
-  coverageDistanceMeters: number | null;
-  isCoveringLocation: boolean;
-}>;
+type SubjectFilter = "all" | "historic" | "trail" | "park" | "venue";
 
 type PublicMapWithDistance = Readonly<{
   map: PublicMapSummary;
@@ -52,63 +44,6 @@ function getLocationCopy(location: LocationState) {
   }
 
   return "See which maps cover you";
-}
-
-function MapThumbnail({ map }: Readonly<{ map: CatalogMap }>) {
-  return (
-    <div className="map-thumbnail" data-tone={map.tone} aria-hidden="true">
-      <span className="map-thumbnail__route map-thumbnail__route--one" />
-      <span className="map-thumbnail__route map-thumbnail__route--two" />
-      <span className="map-thumbnail__pin" />
-      <span className="map-thumbnail__year">{map.mapDateLabel}</span>
-    </div>
-  );
-}
-
-function CatalogCard({ entry }: Readonly<{ entry: MapWithDistance }>) {
-  const { map } = entry;
-
-  return (
-    <article className="catalog-card">
-      <MapThumbnail map={map} />
-      <div className="catalog-card__body">
-        <div className="catalog-card__status-row">
-          {entry.isCoveringLocation ? <span className="status-pill status-pill--here">You are on this map</span> : null}
-          {map.isDownloaded ? <span className="status-pill">Offline</span> : null}
-        </div>
-        <div>
-          <p className="catalog-card__place">{map.place}</p>
-          <h3>{map.title}</h3>
-        </div>
-        <dl className="catalog-card__facts">
-          <div>
-            <dt>Map</dt>
-            <dd>{map.mapDateLabel}</dd>
-          </div>
-          <div>
-            <dt>Anchors</dt>
-            <dd>{map.anchorCount}</dd>
-          </div>
-          <div>
-            <dt>Quality</dt>
-            <dd>{map.qualityScore}%</dd>
-          </div>
-        </dl>
-        <div className="catalog-card__footer">
-          <span>
-            {entry.coverageDistanceMeters === null
-              ? map.resolutionLabel
-              : entry.isCoveringLocation
-                ? "Covers your position"
-                : `${formatDistance(entry.coverageDistanceMeters)} away`}
-          </span>
-          <button className="text-button" type="button" aria-label={`View details for ${map.title}`}>
-            Details <span aria-hidden="true">↗</span>
-          </button>
-        </div>
-      </div>
-    </article>
-  );
 }
 
 function publicDateLabel(map: PublicMapSummary) {
@@ -170,6 +105,8 @@ export function DiscoverExperience() {
   const [subject, setSubject] = useState<SubjectFilter>("all");
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const [publicMaps, setPublicMaps] = useState<readonly PublicMapSummary[] | null>(null);
+  const [communityCatalogStatus, setCommunityCatalogStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [catalogRequestVersion, setCatalogRequestVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,50 +116,19 @@ export function DiscoverExperience() {
         return response.json() as Promise<readonly PublicMapSummary[]>;
       })
       .then((maps) => {
-        if (!cancelled) setPublicMaps(maps);
+        if (!cancelled) {
+          setPublicMaps(maps);
+          setCommunityCatalogStatus("ready");
+        }
       })
       .catch(() => {
-        if (!cancelled) setPublicMaps(null);
+        if (!cancelled) {
+          setPublicMaps(null);
+          setCommunityCatalogStatus("error");
+        }
       });
     return () => { cancelled = true; };
-  }, []);
-
-  const catalog = useMemo(() => {
-    const currentPoint = location.status === "ready" ? location.point : null;
-
-    return CATALOG_MAPS.reduce<MapWithDistance[]>((results, map) => {
-      const matchesSubject = subject === "all" || map.subject === subject;
-      const matchesQuery =
-        deferredQuery.length === 0 ||
-        `${map.title} ${map.place} ${map.mapDateLabel}`.toLocaleLowerCase().includes(deferredQuery);
-
-      if (!matchesSubject || !matchesQuery) {
-        return results;
-      }
-
-      const centerDistanceMeters = currentPoint ? distanceBetweenMeters(currentPoint, map.coverageCenter) : null;
-      const coverageDistanceMeters =
-        centerDistanceMeters === null ? null : Math.max(0, centerDistanceMeters - map.coverageRadiusMeters);
-
-      results.push({
-        map,
-        centerDistanceMeters,
-        coverageDistanceMeters,
-        isCoveringLocation: centerDistanceMeters !== null && centerDistanceMeters <= map.coverageRadiusMeters,
-      });
-      return results;
-    }, []).toSorted((first, second) => {
-      if (first.isCoveringLocation !== second.isCoveringLocation) {
-        return first.isCoveringLocation ? -1 : 1;
-      }
-
-      if (first.coverageDistanceMeters !== null && second.coverageDistanceMeters !== null) {
-        return first.coverageDistanceMeters - second.coverageDistanceMeters;
-      }
-
-      return second.map.qualityScore - first.map.qualityScore;
-    });
-  }, [deferredQuery, location, subject]);
+  }, [catalogRequestVersion]);
 
   const publicCatalog = useMemo(() => {
     if (publicMaps === null) return [];
@@ -254,10 +160,16 @@ export function DiscoverExperience() {
       });
   }, [deferredQuery, location, publicMaps, subject]);
 
-  const usingCommunityCatalog = publicMaps !== null;
+  const usingCommunityCatalog = communityCatalogStatus === "ready";
   const coveringCount = usingCommunityCatalog
     ? publicCatalog.filter((entry) => entry.isCoveringLocation).length
-    : catalog.filter((entry) => entry.isCoveringLocation).length;
+    : 0;
+
+  function retryCommunityCatalog() {
+    setPublicMaps(null);
+    setCommunityCatalogStatus("loading");
+    setCatalogRequestVersion((version) => version + 1);
+  }
 
   function requestLocation() {
     if (!("geolocation" in navigator)) {
@@ -318,7 +230,15 @@ export function DiscoverExperience() {
         <div className="catalog-map" aria-label="Illustrative community map catalog preview">
           <div className="catalog-map__label">
             <span>Catalog view</span>
-            <strong>{location.status === "ready" ? `${coveringCount} covering you` : usingCommunityCatalog ? `${publicMaps.length} shared maps` : "4 sample maps"}</strong>
+            <strong>
+              {location.status === "ready"
+                ? `${coveringCount} covering you`
+                : communityCatalogStatus === "loading"
+                  ? "Loading shared maps…"
+                  : usingCommunityCatalog
+                    ? `${publicMaps?.length ?? 0} shared maps`
+                    : "Shared maps unavailable"}
+            </strong>
           </div>
           <span className="catalog-map__water" />
           <span className="catalog-map__road catalog-map__road--one" />
@@ -364,15 +284,21 @@ export function DiscoverExperience() {
           ))}
         </div>
 
-        {usingCommunityCatalog && publicCatalog.length > 0 ? (
+        {communityCatalogStatus === "loading" ? (
+          <div className="empty-state" aria-live="polite">
+            <p className="eyebrow">Community shelf</p>
+            <h3>Loading shared maps…</h3>
+          </div>
+        ) : communityCatalogStatus === "error" ? (
+          <div className="empty-state" role="alert">
+            <p className="eyebrow">Community shelf</p>
+            <h3>Shared maps could not be loaded.</h3>
+            <p>Your maps are safe. Check the connection and try again.</p>
+            <button className="button button--quiet" type="button" onClick={retryCommunityCatalog}>Retry</button>
+          </div>
+        ) : usingCommunityCatalog && publicCatalog.length > 0 ? (
           <div className="catalog-grid">
             {publicCatalog.map((entry) => <PublicCatalogCard entry={entry} key={entry.map.publicationId} />)}
-          </div>
-        ) : !usingCommunityCatalog && catalog.length > 0 ? (
-          <div className="catalog-grid">
-            {catalog.map((entry) => (
-              <CatalogCard entry={entry} key={entry.map.id} />
-            ))}
           </div>
         ) : (
           <div className="empty-state">

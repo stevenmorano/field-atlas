@@ -1105,12 +1105,18 @@ button {
 }
 
 .target-scroll {
+  --target-edge-padding: 0px;
   height: 100%;
   overflow: auto;
   min-height: 0;
+  padding-block: var(--target-edge-padding);
   overflow-anchor: none;
   overscroll-behavior: none;
   scrollbar-width: none;
+}
+
+.target-scroll[data-zoomed="true"] {
+  --target-edge-padding: 4rem;
 }
 
 .target-scroll::-webkit-scrollbar {
@@ -2521,9 +2527,19 @@ button {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   background: var(--ink);
   box-shadow: var(--shadow);
+}
+
+.saved-map-viewer__toolbar {
+  display: flex;
+  min-height: 2.55rem;
+  padding: 0.3rem 0.55rem;
+  border-bottom: 1px solid rgba(251, 248, 240, 0.14);
+  align-items: center;
+  justify-content: flex-end;
+  background: rgba(23, 33, 28, 0.97);
 }
 
 .saved-map-viewer__header {
@@ -2690,26 +2706,21 @@ button {
 }
 
 .saved-map-viewer__zoom {
-  position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
-  z-index: 10;
   display: flex;
-  padding: 0.3rem;
+  padding: 0.18rem;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 999px;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.08rem;
   color: var(--paper-bright);
   background: rgba(23, 33, 28, 0.9);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(12px);
+  box-shadow: none;
 }
 
 .saved-map-viewer__zoom button {
-  min-width: 2.15rem;
-  height: 2.15rem;
-  padding: 0 0.45rem;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  padding: 0 0.3rem;
   border: 0;
   border-radius: 999px;
   cursor: pointer;
@@ -2728,8 +2739,8 @@ button {
 }
 
 .saved-map-viewer__zoom span {
-  min-width: 3rem;
-  padding-right: 0.45rem;
+  min-width: 2.5rem;
+  padding-right: 0.25rem;
   color: rgba(251, 248, 240, 0.7);
   font-size: 0.68rem;
   font-weight: 700;
@@ -2740,33 +2751,52 @@ button {
   position: absolute;
   right: 0.75rem;
   bottom: 0.75rem;
-  left: 0.75rem;
+  left: auto;
   z-index: 10;
   display: grid;
-  max-width: 46rem;
-  margin: 0 auto;
-  padding: 0.7rem;
+  width: min(calc(100% - 1.5rem), 25rem);
+  padding: 0.42rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 1.05rem;
   color: var(--paper-bright);
   background: rgba(23, 33, 28, 0.92);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
-  gap: 0.65rem;
+  gap: 0.24rem;
   backdrop-filter: blur(16px);
+}
+
+.gps-control-card[data-status="idle"][data-gps-ready="yes"] {
+  width: max-content;
+  max-width: calc(100% - 1.5rem);
+  grid-template-columns: auto auto;
+  align-items: center;
+}
+
+.gps-control-card[data-status="idle"][data-gps-ready="yes"] .gps-control-card__summary,
+.gps-control-card[data-status="idle"][data-gps-ready="yes"] .saved-map-viewer__privacy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .gps-control-card > div:first-child {
   display: flex;
   min-width: 0;
   align-items: start;
-  gap: 0.65rem;
+  gap: 0.45rem;
 }
 
 .gps-control-card__pulse {
-  width: 0.85rem;
-  height: 0.85rem;
-  margin-top: 0.22rem;
-  border: 3px solid rgba(255, 255, 255, 0.9);
+  width: 0.68rem;
+  height: 0.68rem;
+  margin-top: 0.18rem;
+  border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   flex: 0 0 auto;
   background: #6e7772;
@@ -2789,13 +2819,13 @@ button {
 }
 
 .gps-control-card strong {
-  font-size: 0.88rem;
+  font-size: 0.76rem;
 }
 
 .gps-control-card p {
-  margin: 0.15rem 0 0;
+  margin: 0.08rem 0 0;
   color: rgba(251, 248, 240, 0.68);
-  font-size: 0.74rem;
+  font-size: 0.62rem;
 }
 
 .gps-control-card__actions {
@@ -2805,8 +2835,9 @@ button {
 }
 
 .gps-control-card__actions .button {
-  min-height: 2.35rem;
-  padding: 0.55rem 0.8rem;
+  min-height: 1.8rem;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.68rem;
 }
 
 .gps-control-card__actions .button--quiet {
@@ -2817,10 +2848,10 @@ button {
 
 .saved-map-viewer__privacy {
   margin: 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(251, 248, 240, 0.12);
+  padding-top: 0.16rem;
+  border-top: 1px solid rgba(251, 248, 240, 0.1);
   color: rgba(251, 248, 240, 0.58);
-  font-size: 0.68rem;
+  font-size: 0.54rem;
   font-weight: 700;
 }
 
@@ -3277,6 +3308,46 @@ button {
   .saved-map-viewer__header-actions .saved-map-viewer__edit-action::after {
     content: "Edit";
     font-size: 0.78rem;
+  }
+
+  .saved-map-viewer__header-actions .saved-map-viewer__compare-action,
+  .saved-map-viewer__header-actions .saved-map-viewer__profile-action,
+  .saved-map-viewer__header-actions .saved-map-viewer__save-action,
+  .saved-map-viewer__header-actions .saved-map-viewer__report-action {
+    min-width: 3.5rem;
+    font-size: 0;
+  }
+
+  .saved-map-viewer__header-actions .saved-map-viewer__compare-action::after,
+  .saved-map-viewer__header-actions .saved-map-viewer__profile-action::after,
+  .saved-map-viewer__header-actions .saved-map-viewer__save-action::after,
+  .saved-map-viewer__header-actions .saved-map-viewer__report-action::after {
+    font-size: 0.7rem;
+  }
+
+  .saved-map-viewer__header-actions .saved-map-viewer__compare-action::after { content: "Compare"; }
+  .saved-map-viewer__header-actions .saved-map-viewer__profile-action::after { content: "Profile"; }
+  .saved-map-viewer__header-actions .saved-map-viewer__save-action::after { content: "Save"; }
+  .saved-map-viewer__header-actions .saved-map-viewer__report-action::after { content: "Report"; }
+
+  .gps-control-card[data-status="tracking"] {
+    width: max-content;
+    max-width: calc(100% - 1rem);
+    grid-template-columns: auto auto;
+    align-items: center;
+  }
+
+  .gps-control-card[data-status="tracking"] .gps-control-card__summary,
+  .gps-control-card[data-status="tracking"] .saved-map-viewer__privacy {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

@@ -85,7 +85,7 @@ Sign out and back in, then open Account. The **Open moderation** button appears 
 1. Keep a `.fieldatlas` backup and confirm the test map is privately synced.
 2. In My Maps, choose **Share** beside that map.
 3. Choose Public or Unlisted, select the sharing-rights basis, confirm the consequence statement, and publish.
-4. Open the returned link in a signed-out/private browser window. The map, GPS button, offline save, uploader profile, and anonymous report control should work without an account.
+4. Open the returned link in a signed-out/private browser window. The map, GPS button, **Save on this device** action, uploader profile, and anonymous report control should work without an account.
 5. Public maps should appear in Discover immediately. Unlisted maps should work only through their secret link and should not appear in Discover.
 6. Open `/moderation` as the seeded administrator and confirm the map appears in the post-publication queue.
 7. Test **Make private** and confirm it removes anonymous access without changing the local or private-cloud copy.

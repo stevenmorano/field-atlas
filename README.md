@@ -22,7 +22,7 @@ The current build is a local-first functional beta with optional account sync an
 - Publish an explicitly selected synced revision as Public or tokenized Unlisted without waiting for preapproval.
 - Recognize an already-published revision and avoid duplicate publication records or duplicate public image processing.
 - Keep private originals private while serving sanitized high-quality and thumbnail WebP copies.
-- Browse real public maps in Discover, open them with GPS without an account, save them offline, and report problems anonymously.
+- Browse real public maps in Discover, open them with GPS without an account, save them on the current device for offline use, and report problems anonymously.
 - Use generated public usernames, contribution profiles, simple milestones, and an administrator post-publication queue.
 - Install the production build as a PWA with a small offline application shell.
 
