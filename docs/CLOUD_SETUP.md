@@ -1,9 +1,9 @@
 # Cloud setup guide
 
 Status: cloud/community foundation applied successfully; migration `202608120001` from the moderation hardening pass still needs to be applied to the current development database
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-14
 
-The repository contains optional account, private synchronization, and R2 transfer code. Without these environment values, Field Atlas remains a fully functional local-first application and shows setup guidance instead of cloud controls.
+The repository contains account-gated creator tools, private checkpointing, and R2 transfer code. Without these environment values, anonymous viewing remains available while creator routes show setup guidance instead of allowing an upload.
 
 ## 1. Create Supabase resources
 
@@ -58,13 +58,13 @@ Stop the old project from its terminal with `Ctrl+C`; then run `npm run dev` her
 
 ## 4. Verify the private sync flow
 
-1. Open `/account` and create or sign in to an email/password account.
-2. Open `/my-maps` and sync one small test map.
+1. Open `/account` and create or sign in to an email/password account before starting a map.
+2. Open `/anchor/new`, create one small test map, and choose **Finish map**. Confirm the My Maps card says it is backed up.
 3. Confirm that the original local map still opens offline.
 4. Confirm one map, revision, and ready asset record exist in Supabase.
 5. Confirm the original image exists below the account UUID prefix in R2.
-6. Sign in on a second browser profile, open My Maps, and download the cloud-only map to that device.
-7. Confirm its anchors, metadata, viewer, GPS projection, and Compare view match the original.
+6. Sign in on a second browser profile, open My Maps, and confirm the cloud-only map can be opened and compared online before downloading anything.
+7. Optionally choose **Save for offline**, then confirm its anchors, metadata, viewer, GPS projection, and Compare view match the original.
 
 Do not clear the original browser data during setup testing. Keep a verified `.fieldatlas` export until the hosted services and second-device download have both been tested.
 

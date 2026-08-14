@@ -10,6 +10,7 @@ import {
   syncLocalMapToCloud,
 } from "@/features/cloud/cloud-map-service";
 import type { CloudMapSummary } from "@/features/cloud/cloud-map-contract";
+import { formatCloudUpdatedAt } from "@/features/cloud/cloud-date";
 import { CommunityPublicationDialog } from "@/features/community/community-publication-dialog";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -20,14 +21,6 @@ type CloudMapSyncPanelProps = Readonly<{
   localMaps: readonly LocalSavedMap[];
   onLocalLibraryChanged: () => void;
 }>;
-
-function cloudDate(timestamp: number) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(timestamp);
-}
 
 export function CloudMapSyncPanel({ localMaps, onLocalLibraryChanged }: CloudMapSyncPanelProps) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -183,7 +176,7 @@ export function CloudMapSyncPanel({ localMaps, onLocalLibraryChanged }: CloudMap
                   <li key={map.id}>
                     <div>
                       <strong>{map.metadata.title}</strong>
-                      <span>{remote ? `Cloud copy updated ${cloudDate(remote.updatedAt)}` : "Not in your cloud account yet"}</span>
+                      <span>{remote ? `Cloud copy updated ${formatCloudUpdatedAt(remote.updatedAt)}` : "Not in your cloud account yet"}</span>
                     </div>
                     <div className="cloud-map-list__actions">
                       <button className="button button--quiet" type="button" onClick={() => void syncMap(map)} disabled={busyMapId !== null || syncingAll}>

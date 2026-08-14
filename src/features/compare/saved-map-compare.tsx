@@ -18,6 +18,7 @@ import {
 } from "@/features/compare/create-compare-mesh";
 import { drawWarpedMap } from "@/features/compare/draw-warped-map";
 import { readSavedMap } from "@/features/maps/local-saved-map-store";
+import { loadCloudMapForViewing } from "@/features/cloud/cloud-map-service";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 import { createGeoreferenceModel } from "@/lib/georeferencing/create-georeference-model";
 import type { PublicMapDetail } from "@/features/community/community-contract";
@@ -96,6 +97,16 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
           objectUrl = URL.createObjectURL(map.imageBlob);
           setSavedMap(map);
           setBasemapMode(map.basemapMode);
+          setImageSource(objectUrl);
+          setLoadStatus("ready");
+          return;
+        }
+
+        const cloudResult = await loadCloudMapForViewing(mapId);
+        if (cloudResult) {
+          objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
+          setSavedMap(cloudResult.map);
+          setBasemapMode(cloudResult.map.basemapMode);
           setImageSource(objectUrl);
           setLoadStatus("ready");
           return;

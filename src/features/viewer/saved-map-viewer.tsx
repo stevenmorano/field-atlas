@@ -15,6 +15,7 @@ import {
 } from "react";
 
 import { readSavedMap, storeDownloadedCloudMap } from "@/features/maps/local-saved-map-store";
+import { loadCloudMapForViewing } from "@/features/cloud/cloud-map-service";
 import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 import type { PublicMapDetail } from "@/features/community/community-contract";
 import { CommunityReportDialog } from "@/features/community/community-report-dialog";
@@ -112,6 +113,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const shareToken = searchParams.get("share") ?? "";
   const [map, setMap] = useState<LocalSavedMap | null>(null);
   const [publicMap, setPublicMap] = useState<PublicMapDetail | null>(null);
+  const [cloudMap, setCloudMap] = useState(false);
   const [imageSource, setImageSource] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<ViewerLoadStatus>("loading");
   const [viewportSize, setViewportSize] = useState<ViewportSize>({ width: 0, height: 0 });
@@ -156,6 +158,17 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         if (savedMap) {
           objectUrl = URL.createObjectURL(savedMap.imageBlob);
           setMap(savedMap);
+          setCloudMap(false);
+          setImageSource(objectUrl);
+          setLoadStatus("ready");
+          return;
+        }
+
+        const cloudResult = await loadCloudMapForViewing(mapId);
+        if (cloudResult) {
+          objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
+          setMap(cloudResult.map);
+          setCloudMap(true);
           setImageSource(objectUrl);
           setLoadStatus("ready");
           return;
@@ -178,6 +191,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         const publicSavedMap = createLocalMapFromPublicDetail(detail, imageBlob);
         objectUrl = URL.createObjectURL(imageBlob);
         setPublicMap(detail);
+        setCloudMap(false);
         setMap(publicSavedMap);
         setImageSource(objectUrl);
         setLoadStatus("ready");
@@ -592,12 +606,12 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   }
 
   async function saveOnDevice() {
-    if (!map || !publicMap) return;
+    if (!map || (!publicMap && !cloudMap)) return;
     setSavingOnDevice(true);
     setOfflineMessage(null);
     try {
       const result = await storeDownloadedCloudMap(map);
-      setOfflineMessage(result.added ? "Saved to My Maps on this device." : "This map is already saved on this device.");
+      setOfflineMessage(result.added ? "Saved for offline use on this device." : "This map is already available offline.");
     } catch {
       setOfflineMessage("This map could not be saved on this device.");
     } finally {
@@ -656,7 +670,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
           </div>
           <div className="saved-map-viewer__header-actions">
             <span>{map.anchors.length} anchors</span>
-            {publicMap ? (
+              {publicMap ? (
               <>
                 <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id, shareToken) as Route}>Compare with today</Link>
                 <Link className="button button--quiet saved-map-viewer__profile-action" href={`/profiles/${publicMap.author.username}` as Route}>By {publicMap.author.username}</Link>
@@ -666,9 +680,15 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
             ) : (
               <>
                 <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id) as Route}>Compare</Link>
-                <button className="button button--quiet saved-map-viewer__edit-action" type="button" onClick={() => void openAnchorEditor()} disabled={openingEditor}>
-                  {openingEditor ? "Opening…" : "Edit anchors"}
-                </button>
+                {cloudMap ? (
+                  <button className="button button--quiet saved-map-viewer__save-action" type="button" onClick={() => void saveOnDevice()} disabled={savingOnDevice}>
+                    {savingOnDevice ? "Saving…" : "Save for offline"}
+                  </button>
+                ) : (
+                  <button className="button button--quiet saved-map-viewer__edit-action" type="button" onClick={() => void openAnchorEditor()} disabled={openingEditor}>
+                    {openingEditor ? "Opening…" : "Edit anchors"}
+                  </button>
+                )}
               </>
             )}
           </div>

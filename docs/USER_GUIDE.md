@@ -1,22 +1,23 @@
 # User guide
 
-Status: working local-first prototype with optional private sync and community publishing
-Last reviewed: 2026-08-12
+Status: account-gated creator beta with local drafts, private checkpoints, and community publishing
+Last reviewed: 2026-08-14
 
 ## Important storage warning
 
-Your working library is stored in this browser profile on this website origin. Before clearing site data or switching browsers/devices, open My Maps and choose **Back up all maps**. Optional account sync is explicit rather than automatic, so retain a private `.fieldatlas` backup too.
+Your working library is stored in this browser profile on this website origin. Before clearing site data or switching browsers/devices, open My Maps and choose **Back up all maps**. Sign in before creating a map; local drafts save automatically, while cloud checkpoints happen when you finish a map or choose **Save progress to cloud**. Retain a private `.fieldatlas` backup too.
 
 ## Create and anchor a map
 
-1. Open `/anchor/new` or choose **Start a map**.
+1. Open `/account` and create or sign in to an account, then open `/anchor/new` or choose **Start a map**.
 2. If an active draft exists, choose whether to continue it or start fresh. A finished copy already in My Maps remains safe when its active draft is replaced.
 3. Choose **Choose map image** and select a JPEG, PNG, WebP, HEIC, or HEIF image that your browser can decode.
-4. On **Your map**, drag to pan and use the mouse wheel, trackpad, pinch gesture, or zoom buttons. Zoom is capped at 3200% to protect browser rendering.
+4. On **Your map**, drag to pan and use the mouse wheel, trackpad, pinch gesture, or zoom buttons. You can zoom out to 50% to see more of a large sheet at once; zoom is capped at 3200% to protect browser rendering.
 5. If the image is sideways, use the rotate-left or rotate-right buttons. Rotation changes only the working view, not the original pixels or anchor coordinates.
 6. Click or tap a recognizable landmark on the uploaded image. A pending marker appears on the basemap.
 7. Pan and zoom the basemap until its marker is on the same real-world landmark. Choose Street, Satellite, or Hybrid when the built-in style is active.
-8. Select **Save pair**. Repeat with landmarks spread across the map.
+8. Move over either pane to preview the corresponding point in the other pane. The red hover marker is only a guide; click or tap to begin an anchor pair.
+9. Select **Save pair**. Repeat with landmarks spread across the map.
 
 After two anchors, Field Atlas predicts the next basemap position using scale, rotation, and translation. Additional well-distributed anchors add skew and local correction. You may still move every predicted basemap marker before saving it.
 
@@ -30,6 +31,11 @@ After two anchors, Field Atlas predicts the next basemap position using scale, r
 - Treat mesh warnings seriously; contradictory or folded triangles can make GPS misleading.
 
 ## Drafts and finished maps
+
+Creating a map requires a signed-in account. Anonymous visitors can still browse Public maps,
+open Unlisted links, use GPS, and compare maps without signing in. The account check appears before
+an image upload or an Anchor Lab session begins, so there is no surprise sign-in requirement after
+work has started.
 
 The active Anchor Lab draft saves automatically shortly after meaningful changes. **Save draft** writes immediately. Wait for the visible Saved status before deliberately closing a fragile browser session.
 
@@ -54,15 +60,18 @@ Open `/my-maps` to see all active saved records. Search by title, place, type, y
 
 If the same source image was accidentally saved more than once, Field Atlas consolidates exact-source records and preserves the strongest anchor set. Superseded records remain in storage and are not deleted.
 
-## Sign in and privately sync maps
+## Save work across devices
 
 Cloud controls appear when the operator has completed [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
 
-1. Open `/account` and create or sign in to an email/password account.
-2. Return to `/my-maps` and find **Private cloud**.
-3. Choose **Sync privately** for one map or **Sync all local maps**.
-4. Wait for the status message. The existing local image and anchors remain unchanged.
-5. On another signed-in device, cloud-only maps appear in the same panel. Choose **Download to device** to checksum-verify and insert that map into the second browser's local library.
+1. Open `/account` and create or sign in to an email/password account before starting a map.
+2. Drafts save automatically on the current device while you work.
+3. Choose **Finish map** to create the completed My Maps record and back up that checkpoint to your account.
+4. For a completed map, choose **Save progress to cloud** in My Maps whenever you want to checkpoint additional changes. The app prevents repeated saves within a short cooldown and skips identical content.
+5. Sign in on another device and open **My Maps**. Cloud-only records appear in the same library and can be opened or compared online immediately. If a cloud copy has more anchors than the device copy, My Maps shows that count and offers **Download latest**. Choose it only when you want that cloud revision to replace the local copy. Choose **Save for offline** for a cloud-only map when you also want a local copy; the image is checksum-verified before it is added to that device.
+6. A downloaded map can be removed from the device with **Remove from this device**. This never deletes the account copy or a publication. If local edits are newer, save progress first.
+
+Use **Refresh maps** if a cached page is stale. Each cloud-backed row shows the exact update date and time plus a relative label such as **10 minutes ago**, so you can confirm how recently a copy was synced.
 
 Repeated syncs create immutable revisions. If another device changed the same map after this browser's last accepted revision, Field Atlas preserves the new upload as a conflict instead of silently replacing the remote current version. Conflict review UI is planned; keep both local copies and the `.fieldatlas` backup in the meantime.
 
@@ -70,8 +79,8 @@ Repeated syncs create immutable revisions. If another device changed the same ma
 
 Community sharing appears after the operator applies all migrations in [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
 
-1. Privately sync the latest map revision first.
-2. In the Private cloud list, choose **Share** beside that map.
+1. Finish the map or choose **Save progress to cloud** in My Maps so the latest checkpoint is backed up.
+2. In My Maps, choose **Share** beside that map.
 3. Choose **Public** to list it in Discover immediately, or **Unlisted** to create an immediate secret link that is absent from Discover.
 4. Select why you are allowed to share it and add a source, license, or attribution when available. A web source is optional; for a physical map or personal photograph, use the attribution field to explain what you know.
 5. Confirm that other people can open the separate shared copy immediately. The unchanged original remains private.
@@ -117,7 +126,7 @@ Locations outside the triangulated anchor area are labeled as extrapolated and a
 
 ## Compare with a current map
 
-Select **Compare** from My Maps or **Compare with today** on a Public or Unlisted map viewer. Compare mode automatically rotates, scales, skews, and locally warps the source using its existing anchors. Public comparison works without an account or device save first.
+Select **Compare** from My Maps or **Compare with today** on a Public or Unlisted map viewer. Compare mode automatically rotates, scales, skews, and locally warps the source using its existing anchors. Public comparison works without an account or device save first, and signed-in cloud-only maps can be compared before saving an offline copy.
 
 - Use **Opacity** to see both eras/layers.
 - Toggle the overlay without losing the current view.

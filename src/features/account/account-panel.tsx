@@ -1,6 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -10,6 +11,11 @@ import { ProfileSettings } from "@/features/community/profile-settings";
 
 type AccountStatus = "loading" | "signed-out" | "signed-in" | "unconfigured";
 type AccountMode = "sign-in" | "sign-up";
+
+function requestedReturnPath() {
+  const candidate = new URL(window.location.href).searchParams.get("returnTo");
+  return candidate?.startsWith("/") && !candidate.startsWith("//") ? candidate : "/my-maps";
+}
 
 export function AccountPanel() {
   const router = useRouter();
@@ -61,6 +67,7 @@ export function AccountPanel() {
 
     setBusy(true);
     setMessage(null);
+    const returnTo = requestedReturnPath();
 
     if (mode === "sign-in") {
       const { error } = await supabase.auth.signInWithPassword({
@@ -72,7 +79,7 @@ export function AccountPanel() {
         setMessage(error.message);
         return;
       }
-      router.push("/my-maps");
+      router.push(returnTo as Route);
       router.refresh();
       return;
     }
@@ -80,7 +87,7 @@ export function AccountPanel() {
     const { data, error } = await supabase.auth.signUp({
       email: emailAddress,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}` },
     });
     setBusy(false);
     if (error) {
@@ -88,7 +95,7 @@ export function AccountPanel() {
       return;
     }
     if (data.session) {
-      router.push("/my-maps");
+      router.push(returnTo as Route);
       router.refresh();
       return;
     }
@@ -135,8 +142,8 @@ export function AccountPanel() {
         <h1>Your maps can travel with you.</h1>
         <p className="account-card__identity">{user.email ?? "Field Atlas account"}</p>
         <p>
-          Cloud sync is always explicit. Your browser copies remain available offline and are never
-          removed when you upload them.
+          Drafts save automatically on this device. Finishing a map backs it up to your account, and
+          you can save another checkpoint from My Maps whenever you are ready.
         </p>
         <div className="account-card__actions">
           <Link className="button button--signal" href="/my-maps">Open My Maps</Link>

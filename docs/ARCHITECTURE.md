@@ -1,7 +1,7 @@
 # Current architecture
 
-Status: implemented local-first beta with activated private sync and core community publishing in development
-Last reviewed: 2026-08-12
+Status: implemented local-first, account-gated creator beta with activated private sync and core community publishing
+Last reviewed: 2026-08-14
 
 ## System overview
 
@@ -37,8 +37,8 @@ All core map behavior remains browser-local. When configured, App Router handler
 | `/anchor/new` | `NewAnchorSession` | Warn before replacing the active draft and start a clean workspace |
 | `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, reopen, back up, or restore saved maps |
 | `/account` | `AccountPanel` | Email/password account, public profile settings, sign-out, and cloud-setup state |
-| `/maps/[mapId]` | `SavedMapViewer` | Local or authorized-public raster viewer, offline save, reports, and ephemeral GPS |
-| `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped raster overlay synchronized with MapLibre |
+| `/maps/[mapId]` | `SavedMapViewer` | Local, authorized-cloud, or authorized-public raster viewer, optional offline save, reports, and ephemeral GPS |
+| `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped local, authorized-cloud, or public raster overlay synchronized with MapLibre |
 | `/profiles/[username]` | `PublicProfile` | Anonymous public mapmaker page and effective-public contributions |
 | `/moderation` | `ModerationConsole` | Staff-only post-publication and report queue |
 
@@ -48,7 +48,7 @@ The JSON and redirect handlers under `/api/cloud/*` and `/api/community/*` are c
 
 ## Feature boundaries
 
-- `src/features/anchor`: file selection, target-image gestures, basemap interaction, anchor history, draft hydration/autosave, and 90-degree working-view rotation.
+- `src/features/anchor`: file selection, target-image gestures, reciprocal forward/inverse hover previews, basemap interaction, anchor history, draft hydration/autosave, and 90-degree working-view rotation.
 - `src/features/maps`: structured metadata, saved-map persistence, exact-source consolidation, and My Maps UI.
 - `src/features/backup`: versioned package encoding/validation, SHA-256 asset deduplication, import conflict planning, atomic restore, and My Maps backup controls.
 - `src/features/cloud`: upload validation, hashing, explicit private sync, immutable revision state, account map listing, and verified device download.
@@ -87,6 +87,8 @@ flowchart LR
 
 Editor rotation is display-only. Pointer coordinates and marker positions are converted to and from original image pixels, so rotation does not mutate saved anchors or the image Blob.
 
+Anchor Lab hover previews use the same forward/inverse georeference model as GPS and prediction markers. A pointer over either pane produces a temporary red guide in the other pane; it never changes anchors or saved data.
+
 ## Local persistence
 
 The IndexedDB database is `field-atlas-local`, version 3:
@@ -101,7 +103,7 @@ Both stores retain native `Blob` values; image data is not base64-encoded. Write
 
 Account sessions use Supabase SSR cookies refreshed by the Next.js 16 `proxy.ts` convention. Every mutation re-verifies authentication/authorization close to the data source. Postgres RLS permits owners to select their records. Anonymous users cannot select raw maps, revisions, private assets, reports, roles, or unlisted records; allowlisted security-definer functions return only effective public DTOs.
 
-The client hashes the original Blob, asks the server for a five-minute content-type-restricted R2 `PUT` URL, uploads directly, and completes the asset only after a server-side `HEAD` size/type check. Sync then creates an immutable revision. A stale base revision is preserved as a conflict and does not replace the remote current revision. Downloads are authorized through a short-lived `GET` URL and checksum-verified before a cloud-only record is inserted into IndexedDB.
+The client hashes the original Blob, asks the server for a five-minute content-type-restricted R2 `PUT` URL, uploads directly, and completes the asset only after a server-side `HEAD` size/type check. A map is sent only when the creator finishes it or explicitly chooses a cloud checkpoint; local autosaves do not upload each anchor. Sync then creates an immutable revision. A stale base revision is preserved as a conflict and does not replace the remote current revision. Downloads are authorized through a short-lived `GET` URL and checksum-verified before a cloud-only record is inserted into IndexedDB.
 
 The additive community migration adds immutable publication records, exact revision isolation, revocable Unlisted capability hashes, map-level moderation holds, anonymous reports, generated profiles, roles, and an append-only action log. Publishing downloads the verified private source server-side, rechecks its checksum, decodes it with bounded pixels, rotates from metadata, and writes immutable sanitized WebP map/thumbnail objects before atomically advancing `current_publication_id`. An exact current revision plus identical sharing fields is rejected before the source image is read, preventing duplicate R2 derivatives while retaining idempotent retry recovery. See [`cloud-sync-foundation.md`](cloud-sync-foundation.md), [`community-publishing-foundation.md`](community-publishing-foundation.md), [`publication-deduplication.md`](publication-deduplication.md), and [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
 

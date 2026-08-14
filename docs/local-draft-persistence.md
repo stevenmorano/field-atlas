@@ -6,7 +6,7 @@ Last reviewed: 2026-08-12
 ## Understanding summary
 
 - A draft preserves the uploaded image and its anchors together.
-- Saving works locally and offline without an account.
+- Draft data is saved locally and offline after the creator account gate has passed.
 - The editor autosaves after meaningful changes and also offers **Save draft**.
 - Reopening or refreshing `/anchor` restores the current draft.
 - The local beta keeps one active draft alongside multiple finished My Maps records.
@@ -24,7 +24,7 @@ Last reviewed: 2026-08-12
 
 1. **IndexedDB draft (selected):** stores structured data and binary image Blobs, works offline, and survives reloads.
 2. **localStorage:** rejected because large image data exceeds its practical synchronous limits.
-3. **Server-only draft:** rejected because cloud accounts now complement rather than replace the offline local draft.
+3. **Server-only draft:** rejected because cloud checkpoints complement rather than replace the offline local draft.
 
 ## Current design
 

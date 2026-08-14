@@ -1,6 +1,6 @@
 # Field Atlas documentation
 
-This folder separates documentation of the **working local-first beta and configured cloud/community foundation** from records describing why individual features were built. The larger public-beta vision lives in [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
+This folder separates documentation of the **working local-first, account-gated creator beta and configured cloud/community foundation** from records describing why individual features were built. The larger public-beta vision lives in [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
 
 ## Start here
 
@@ -29,6 +29,7 @@ This folder separates documentation of the **working local-first beta and config
 - [`cloud-sync-foundation.md`](cloud-sync-foundation.md)
 - [`community-publishing-foundation.md`](community-publishing-foundation.md)
 - [`publication-deduplication.md`](publication-deduplication.md)
+- [`my-maps-workflow-redesign.md`](my-maps-workflow-redesign.md)
 
 These records capture accepted scope, alternatives, and decisions. If implementation behavior changes, update the corresponding record together with the current-state guides.
 
@@ -37,5 +38,5 @@ These records capture accepted scope, alternatives, and decisions. If implementa
 - Say **current** or **implemented** only for behavior present in the repository.
 - Say **planned**, **target**, or **future beta** for behavior not present in the repository.
 - Prefer route names and exported data types over screenshots that can become stale.
-- Distinguish the implemented explicit account sync from automatic background backup, which does not exist.
+- Distinguish automatic local draft saving from the implemented account-gated creator workflow and explicit cloud checkpoints in [`my-maps-workflow-redesign.md`](my-maps-workflow-redesign.md). Neither local autosave nor cloud checkpointing publishes a map automatically.
 - Do not document GPS collection beyond foreground, in-memory browser use.

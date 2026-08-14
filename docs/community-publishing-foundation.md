@@ -1,7 +1,7 @@
 # Community publishing foundation
 
 Status: core small-beta implementation is active in the configured development environment; fresh environments require the documented migrations and administrator seed
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-14
 
 ## Current implementation boundary
 
@@ -26,7 +26,7 @@ The fuller design below intentionally records later hardening work as well as th
 - The initial audience is roughly 20-50 testers and dozens to hundreds of public maps.
 - Supabase Auth/Postgres remains the identity, authorization, structured-data, and revision system.
 - The existing private Cloudflare R2 bucket remains the original and public-derivative object store.
-- Local IndexedDB maps and explicit private cloud sync continue to work without publication.
+- Anonymous visitors can browse and use public maps without an account. Creator accounts are required before upload, anchoring, editing, map creation, cloud backup, or publishing; local drafts and completed maps remain available through the signed-in My Maps workflow.
 - Immediate publishing is an explicit product decision with a residual post-moderation risk accepted for the small beta.
 - Public lists use sanitized lightweight thumbnails and pagination rather than original image files.
 - Published revisions are immutable and reversible while the map exists. Moderation actions are auditable.
@@ -44,7 +44,7 @@ The fuller design below intentionally records later hardening work as well as th
 
 ### Access model
 
-Anonymous visitors may search and browse public maps, open unlisted links, use foreground GPS, compare maps with a basemap, download public map packages for offline use, and report problems. The current local-only map tools remain available without an account.
+Anonymous visitors may search and browse public maps, open unlisted links, use foreground GPS, compare maps with a basemap, download public map packages for offline use, and report problems. Creator workflows begin behind the account gate so a visitor never invests in anchoring before learning that an account is required.
 
 A signed-in, email-verified account is required to sync maps to the cloud, publish or unlist a map, save cloud favorites, receive contribution credit, and maintain a public profile. The future community-improvement workflow will also require an account. Email addresses never appear in public records or pages.
 

@@ -1,4 +1,4 @@
-import { MyMapsLibrary } from "@/features/maps/my-maps-library";
+import { UnifiedMyMapsLibrary } from "@/features/maps/unified-my-maps-library";
 
 export const metadata = {
   title: "My Maps",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function MyMapsPage() {
-  return <MyMapsLibrary />;
+  return <UnifiedMyMapsLibrary />;
 }

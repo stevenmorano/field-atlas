@@ -1,13 +1,13 @@
 # Cloud account and sync foundation
 
 Status: private-sync foundation implemented and community successor activated in the configured development environment
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-14
 
 ## Understanding summary
 
-- Field Atlas remains usable without an account or network connection.
+- Field Atlas remains usable for anonymous viewing without an account; creator tools require the configured account flow.
 - Accounts add private cloud backup and cross-device access; they do not replace IndexedDB.
-- Existing local maps are copied only after the owner explicitly chooses **Sync to cloud**.
+- Drafts stay local while they are being edited. A finished map or an explicit **Save progress to cloud** checkpoint copies the current map to the owner's account.
 - Supabase Auth and Postgres hold identity, ownership, metadata, anchors, and immutable revisions.
 - Cloudflare R2 holds original high-resolution image files without recompression.
 - Live GPS readings, viewing history, and traveled paths never enter the cloud sync payload.
@@ -20,13 +20,13 @@ Last reviewed: 2026-08-12
 - A map image may be as large as 100 MB; direct presigned uploads avoid routing that payload through Next.js.
 - Upload and download URLs are short-lived bearer credentials and are never persisted in IndexedDB or Postgres.
 - A local map ID is already a UUID and can remain the stable cloud map ID.
-- The application continues to work normally when cloud environment variables are missing.
+- Anonymous catalog, public viewing, GPS, and Compare remain available when cloud environment variables are missing; creator routes show setup guidance.
 
 ## Accepted design
 
 ### Authentication
 
-Supabase SSR clients store the session in cookies. Server authorization uses a verified user lookup or claims check; browser-only visibility checks are never treated as authorization. The Account page offers email/password registration, sign-in, and sign-out. Anonymous users can continue using every current local feature.
+Supabase SSR clients store the session in cookies. Server authorization uses a verified user lookup or claims check; browser-only visibility checks are never treated as authorization. The Account page offers email/password registration, sign-in, and sign-out. Anonymous users can browse public maps, use GPS, and compare, but an account is required before image upload, Anchor Lab, editing, map creation, cloud backup, or publishing.
 
 ### Data and authorization
 
@@ -40,7 +40,7 @@ The browser hashes the original Blob, requests a short-lived, content-type-restr
 
 ### Local/cloud boundary
 
-Cloud sync state is stored in a new IndexedDB object store separate from saved map records. Syncing never deletes or rewrites the local image, metadata, or anchors. A cloud-only map can be explicitly downloaded to the device, after which the existing viewer, compare, and editor flows operate on the local copy.
+Cloud sync state is stored in a new IndexedDB object store separate from saved map records. Checkpointing never deletes or rewrites the local image, metadata, or anchors. My Maps presents local and cloud-only records in one library. A signed-in cloud-only map can be opened or compared online without creating a local record; the creator may optionally save it to the device for offline use, after which the existing viewer, compare, and editor flows operate on the local copy. Removing an offline copy only deletes that local record; it does not delete the account map or publication.
 
 ### Public publishing boundary
 

@@ -1,4 +1,5 @@
 import { NewAnchorSession } from "@/features/anchor/new-anchor-session";
+import { CreatorAccessGate } from "@/features/account/creator-access-gate";
 
 export const metadata = {
   title: "Start a new map",
@@ -8,8 +9,9 @@ export const metadata = {
 export default function NewAnchorPage() {
   return (
     <main id="main-content">
-      <NewAnchorSession />
+      <CreatorAccessGate returnTo="/anchor/new">
+        <NewAnchorSession />
+      </CreatorAccessGate>
     </main>
   );
 }
-

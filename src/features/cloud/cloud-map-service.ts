@@ -9,6 +9,7 @@ import {
   type CloudMapSummary,
   type CloudSyncResult,
 } from "@/features/cloud/cloud-map-contract";
+import { createLocalMapFromCloudDetail } from "@/features/cloud/cloud-map-local";
 import {
   readCloudSyncState,
   writeCloudSyncState,
@@ -119,33 +120,21 @@ export async function syncLocalMapToCloud(map: LocalSavedMap, userId: string) {
   return syncBody;
 }
 
-export async function downloadCloudMapToDevice(summary: CloudMapSummary, userId: string) {
-  const detailResponse = await fetch(`/api/cloud/maps/${summary.id}`, { cache: "no-store" });
-  const cloudMap = parseCloudMapDownload(await requireJson(detailResponse));
-  const imageResponse = await fetch(`/api/cloud/assets/${cloudMap.assetId}`, { cache: "no-store" });
-  if (!imageResponse.ok) {
-    throw new Error(await responseError(imageResponse));
+export async function downloadCloudMapToDevice(
+  summary: CloudMapSummary,
+  userId: string,
+  options: Readonly<{ replaceExisting?: boolean }> = {},
+) {
+  const loaded = await loadCloudMapForViewing(summary.id);
+  if (!loaded) {
+    throw new Error("The cloud map could not be opened.");
   }
-  const imageBlob = await imageResponse.blob();
-  if (await sha256Hex(imageBlob) !== cloudMap.assetSha256) {
-    throw new Error("The downloaded image did not match its cloud checksum.");
-  }
-
-  const localMap: LocalSavedMap = {
-    id: cloudMap.id,
-    version: 1,
-    createdAt: cloudMap.createdAt,
-    updatedAt: cloudMap.clientUpdatedAt,
-    metadata: cloudMap.metadata,
-    imageName: cloudMap.imageName,
-    imageBlob,
-    imageDimensions: cloudMap.imageDimensions,
-    anchors: cloudMap.anchors,
-    targetZoom: cloudMap.targetZoom,
-    basemapMode: cloudMap.basemapMode,
-  };
-  const stored = await storeDownloadedCloudMap(localMap);
-  if (stored.added) {
+  const { detail: cloudMap, map: localMap } = loaded;
+  const stored = await storeDownloadedCloudMap(localMap, {
+    replaceIfOlder: true,
+    replaceExisting: options.replaceExisting,
+  });
+  if (stored.added || stored.updated) {
     await writeCloudSyncState({
       mapId: localMap.id,
       userId,
@@ -155,4 +144,24 @@ export async function downloadCloudMapToDevice(summary: CloudMapSummary, userId:
     });
   }
   return stored;
+}
+
+export async function loadCloudMapForViewing(mapId: string) {
+  const detailResponse = await fetch(`/api/cloud/maps/${mapId}`, { cache: "no-store" });
+  if (detailResponse.status === 401 || detailResponse.status === 404) {
+    return null;
+  }
+  const cloudMap = parseCloudMapDownload(await requireJson(detailResponse));
+  const imageResponse = await fetch(`/api/cloud/assets/${cloudMap.assetId}`, { cache: "no-store" });
+  if (!imageResponse.ok) {
+    throw new Error(await responseError(imageResponse));
+  }
+  const imageBlob = await imageResponse.blob();
+  if (await sha256Hex(imageBlob) !== cloudMap.assetSha256) {
+    throw new Error("The cloud image did not match its checksum.");
+  }
+  return {
+    detail: cloudMap,
+    map: createLocalMapFromCloudDetail(cloudMap, imageBlob),
+  };
 }

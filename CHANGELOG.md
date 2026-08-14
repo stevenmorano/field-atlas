@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-14 - Creator account and unified My Maps workflow
+
+- Added an account gate before image upload, Anchor Lab, editing, map creation, cloud backup, and publishing while keeping anonymous public viewing, GPS, and Compare open.
+- Replaced the split local/cloud My Maps presentation with Drafts first and one completed library containing local and cloud-only records.
+- Added explicit **Save progress to cloud**, automatic private backup on **Finish map**, client/API cooldowns, duplicate-fingerprint no-ops, **Download latest**, and safe **Remove from this device** controls.
+- Added cloud checkpoint timestamp clarity, update-in-place download behavior, regression tests, and synchronized product, privacy, setup, architecture, and beta-readiness documentation.
+- Fixed My Maps card previews and action wrapping, and made cloud-only maps openable/comparable online before optional offline saving.
+- Fixed cross-device revision detection when cloud anchor content is newer but its client timestamp is older than the local browser copy.
+- Allowed the Anchor Lab uploaded-map pane to zoom out to 50% for large sheets.
+- Centered reduced-zoom sheets below the editor controls and hardened uploaded-map pointer dragging against native image ghost-drag behavior, including lost-pointer cleanup.
+- Added reciprocal Anchor Lab hover previews so moving over either pane shows the corresponding point in the other pane.
+
 ## 2026-08-12 - Beta-readiness backlog
 
 - Added [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) as the maintained release checklist for interaction bugs, public Compare, revision updates, rotation, saving language, favorites, and production verification.

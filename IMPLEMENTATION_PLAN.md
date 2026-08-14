@@ -1,11 +1,11 @@
 # Implementation plan
 
-Status: local, private-cloud, and core community beta active in development; moderation release gate passed and beta-readiness interaction/workflow gate next
-Last updated: 2026-08-12
+Status: creator account gate and unified My Maps slice active locally; database hardening and beta release verification next
+Last updated: 2026-08-14
 
 ## Delivery strategy
 
-The project deliberately proved the risky georeferencing core locally before adding accounts or infrastructure. The current application now carries that browser-local workflow through optional private cloud sync and instant community publishing without making either service a prerequisite for map creation or use.
+The project deliberately proved the risky georeferencing core locally before adding accounts or infrastructure. Anonymous viewing remains open, while creator workflows now begin behind an account gate. Drafts stay local during editing; finished maps and explicit checkpoints back up to the account without uploading every anchor event.
 
 The next steps prioritize plain-language public workflows, reliable map interaction, and release verification around the working community path, followed by map-preparation and editing improvements. See [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) for the maintained tester-facing gate.
 
@@ -20,6 +20,7 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Numbered predict/correct anchor workflow, delete, clear, undo, and redo.
 - [x] Similarity, affine, and Delaunay piecewise-affine georeferencing with inverse projection and mesh warnings.
 - [x] Deep uploaded-map zoom up to 3200% with pointer-focused wheel behavior.
+- [x] Uploaded-map zoom out to 50%, reduced-zoom centering below controls, reciprocal pane hover previews, and pointer-capture/native-drag hardening.
 - [x] View-only 0/90/180/270-degree uploaded-map rotation.
 - [x] Debounced and explicit local draft persistence in IndexedDB.
 - [x] Structured named maps and searchable My Maps library.
@@ -29,7 +30,7 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Portable `.fieldatlas` backup/restore with exact images, import preview, conflict preservation, and draft protection.
 - [x] Optional Supabase email/password accounts with private-by-default Postgres/RLS records.
 - [x] Direct, signed Cloudflare R2 original-image upload/download with verification.
-- [x] Explicit local-to-cloud sync, immutable revisions, stale-device conflict preservation, and cloud-to-device download.
+- [x] Explicit local-to-cloud checkpoints, immutable revisions, stale-device conflict preservation, and cloud-to-device download.
 - [x] Explicit Public/Unlisted publication with sanitized WebP derivatives and private originals.
 - [x] Anonymous Discover, map viewing, foreground GPS, offline save, profiles, and problem reports.
 - [x] Post-publication administrator queue with check, changes-requested, hide, and restore actions.
@@ -60,14 +61,15 @@ Implemented design details:
 
 ## Next increments
 
-1. **Beta-readiness interaction gate:** fix viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, and maximum-zoom dragging; verify desktop and mobile touch behavior.
-2. **Public workflow gate:** expose Compare to anonymous public visitors, clarify Sync changes → Update public map, and ship optional source/reference metadata.
-3. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
-4. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
-5. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
-6. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
-7. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
-8. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
+1. **Creator account and unified My Maps workflow:** account gate, Drafts-first library, merged local/cloud records, explicit checkpoints, client/API cooldown, and Download/Remove offline controls are implemented locally. Finish release verification and database-level concurrency hardening. See [`docs/my-maps-workflow-redesign.md`](docs/my-maps-workflow-redesign.md).
+2. **Beta-readiness interaction gate:** viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, reduced zoom, reciprocal hover, and maximum-zoom dragging are implemented locally; verify desktop and mobile touch behavior.
+3. **Public workflow gate:** anonymous Compare, optional source/reference metadata, public/unlisted viewing, reporting, profiles, and moderation are implemented locally. Clarify and verify the changed-revision public update workflow before beta.
+4. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
+5. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
+6. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
+7. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
+8. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
+9. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
 
 ## Completed increment: moderation release gate
 

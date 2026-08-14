@@ -1,94 +1,109 @@
 # Beta readiness
 
 Status: beta backlog captured; the current production deployment is not yet the public beta release candidate
-Last reviewed: 2026-08-13
+Last reviewed: 2026-08-14
 
 This document is the working release checklist for people who did not build Field Atlas. It records the usability problems, workflow gaps, and product decisions that must be clear before inviting a broader group of testers.
 
-The checklist is intentionally separate from the implementation history. A checked item means the behavior is implemented and verified in the deployed release candidate, not merely discussed or working in a local browser.
+The checklist is intentionally separate from the implementation history. A checked item means the behavior is implemented and validated in the current codebase. Live Vercel verification remains a separate release gate below, so local completion is never presented as deployed completion.
+
+Status key: `[x]` implemented and locally validated · `[ ]` still needs implementation or verification.
 
 ## Must fix before inviting beta testers
 
 ### 1. Keep map content visible
 
-- Move or inset viewer zoom controls so they do not cover meaningful map content.
-- Viewer zoom controls now sit in a compact toolbar above the map image instead of covering it.
-- Replace the large GPS status card with a compact status bar or collapsible control. GPS details, accuracy, Recenter, and Stop must remain discoverable without blocking the map.
-- Verify the layout at desktop, tablet, and phone widths.
+- [x] Viewer zoom controls now sit in a compact toolbar above the map image instead of covering it.
+- [x] The GPS status card is compact while keeping GPS details, accuracy, Recenter, and Stop discoverable.
+- [ ] Verify the layout at desktop, tablet, and phone widths on the release candidate.
 
 ### 2. Make Anchor Lab navigation reliable
 
-- Add safe pan padding/overscroll so the top of the uploaded image can be moved below the **Your map** controls instead of being permanently hidden.
-- Reproduce and fix the defect where dragging stops at very high zoom until the user zooms out.
-- Maximum-zoom Anchor Lab panning now captures the gesture on the scroll viewport, with edge padding enabled while zoomed so image edges can be positioned below the pane controls.
-- Deferred mobile QA: pinch-to-zoom works on the current basemap, but the uploaded-map pane currently requires its on-pane zoom buttons. Add touch pinch zoom to the uploaded-map pane and verify it at normal and maximum zoom.
-- Verify pointer, touch, trackpad, wheel zoom, and 3,200% zoom behavior without changing anchor coordinates or existing browser maps.
+- [x] Anchor Lab has safe pan padding/overscroll so the top of the uploaded image can be moved below the **Your map** controls.
+- [x] The high-zoom dragging defect is fixed; panning captures the gesture on the scroll viewport and keeps edge padding enabled.
+- [x] The uploaded-map pane can zoom out to 50% so large sheets can be viewed as a whole while anchoring.
+- [x] Reduced-zoom uploaded maps are centered below the floating controls, and native image dragging is disabled while pointer capture handles panning. Lost pointer capture also clears the active drag state.
+- [x] Hovering either Anchor Lab pane previews the corresponding point in the other pane with a red guide marker.
+- [ ] Add touch pinch-to-zoom to the uploaded-map pane and verify it at normal and maximum zoom.
+- [ ] Verify pointer, touch, trackpad, wheel zoom, and 3,200% zoom behavior without changing anchor coordinates or existing browser maps.
 
 ### 3. Put Compare where public visitors can find it
 
-- Add **Compare with today** directly to every effective Public or Unlisted map.
-- Public and Unlisted viewers now show **Compare with today** directly in the header; Unlisted links carry their share token into Compare.
-- Discover now shows a clear retry state when the community catalog is unreachable instead of substituting sample map cards that could be mistaken for live publications.
-- Keep it available without an account and without requiring **Save on this device** first.
-- Reuse the existing warped overlay behavior: Street, Satellite, Hybrid, opacity, visibility, and Fit overlay.
-- Keep GPS viewing and comparison as separate, clearly labeled actions.
+- [x] Public and Unlisted viewers show **Compare with today** directly in the header; Unlisted links carry their share token into Compare.
+- [x] Discover shows a clear retry state when the community catalog is unreachable instead of substituting sample map cards.
+- [x] Compare works without an account and without requiring **Save on this device** first.
+- [x] Compare reuses the warped overlay behavior: Street, Satellite, Hybrid, opacity, visibility, and Fit overlay.
+- [x] GPS viewing and comparison remain separate, clearly labeled actions.
 
 ### 4. Make public revision updates understandable
 
-- Detect when a local map has newer anchors, details, or imagery than the currently published revision.
-- Explain the sequence in plain language: **Sync changes**, then **Update public map**.
-- Preserve immutable publication history; updating must create a new publication snapshot rather than silently changing an existing public record.
+- [ ] Detect when a local map has newer anchors, details, or imagery than the currently published revision.
+- [ ] Explain the sequence in plain language: **Sync changes**, then **Update public map**.
+- [ ] Preserve immutable publication history; updating must create a new publication snapshot rather than silently changing an existing public record.
 
 ### 5. Make sharing metadata fit real-world sources
 
-- Keep **Source or reference** optional for physical maps, personal photographs, and items with no online source.
-- Keep the rights declaration, license name when an open license is selected, and credit/attribution available.
-- The optional-source change is implemented locally and must be included in the next release commit and deployment.
+- [x] **Source or reference** is optional for physical maps, personal photographs, and items with no online source.
+- [x] The rights declaration, license name when an open license is selected, and credit/attribution remain available.
+- [ ] Verify the optional-source flow on the release candidate.
 
 ### 6. Make saving language unambiguous
 
-- The anonymous viewer action now reads **Save on this device**; verify the deployed release and keep the wording consistent in guides and support copy.
-- The Discover shelf now shows a loading state while the community catalog request is in flight, so configured deployments do not briefly show stale sample cards before real public maps arrive.
-- On phone-sized viewers, an active GPS session collapses to the status and action buttons so the map remains the focus; explanatory GPS text remains available for loading and error states.
-- Explain that browser-local saves can disappear when site data, private browsing data, or the browser profile is removed.
-- Keep private cloud copies, local My Maps records, and community favorites visibly separate.
-- Show the cloud-copy update time in addition to the date, using a readable local timestamp and a relative label such as **10 minutes ago** or **5 hours ago** so recent sync activity is easy to confirm.
+- [x] The anonymous viewer action reads **Save on this device**, with consistent wording in guides and support copy.
+- [x] The Discover shelf shows a loading state while the community catalog request is in flight.
+- [x] On phone-sized viewers, an active GPS session collapses to status and action buttons so the map remains the focus.
+- [x] The guides explain that browser-local saves can disappear when site data, private browsing data, or the browser profile is removed.
+- [ ] Keep private cloud copies, local My Maps records, and community favorites visibly separate; durable account favorites remain a later feature.
+- [x] Cloud-copy rows show a readable local date/time plus a relative label such as **10 minutes ago** or **5 hours ago**.
 
 ## Beta feature decisions
 
+### Creator accounts and unified My Maps
+
+The accepted redesign is documented in [`my-maps-workflow-redesign.md`](my-maps-workflow-redesign.md). The first local implementation slice is now in place; remaining database-level hardening and release verification stay open:
+
+- [x] Require account creation/sign-in before image upload, Anchor Lab, editing, map creation, cloud backup, or publishing.
+- [x] Keep anonymous Public/Unlisted viewing, GPS, and Compare available.
+- [x] Save drafts automatically on the device, while cloud backup happens through **Save progress to cloud** or **Finish map**.
+- [x] Enforce a 30-second per-map cloud-save interval in the client and cloud API route; duplicate-fingerprint protection is implemented. Database-level concurrency hardening remains an operational follow-up.
+- [x] Put Drafts above one completed My Maps library containing local and cloud-only records.
+- [x] Keep cloud-only cards usable online with **Open map** and **Compare**; make **Save for offline**, **Download latest**, and **Remove from this device** optional device actions that never delete the account map or publication.
+- [x] Detect a cloud checkpoint with more anchors than the device copy even when timestamps disagree, and require an explicit **Download latest** action before replacing the local record.
+- [x] Add a small **Refresh maps** fallback while preserving cached records when a refresh fails.
+
 ### Orientation and rotation
 
-- Store a non-destructive display rotation for a map instead of rewriting the uploaded image or anchor coordinates.
-- Let the creator set a default display rotation before publishing.
-- Let viewers rotate the GPS map and provide **Reset rotation**.
-- Rotate the GPS marker, accuracy area, and Compare overlay consistently with the displayed image.
-- Recommended first version: 90-degree rotation buttons plus Reset. Free-angle and automatic north-up behavior require a separate coordinate/orientation design review.
+- [ ] Store a non-destructive display rotation for a map instead of rewriting the uploaded image or anchor coordinates.
+- [ ] Let the creator set a default display rotation before publishing.
+- [ ] Let viewers rotate the GPS map and provide **Reset rotation**.
+- [ ] Rotate the GPS marker, accuracy area, and Compare overlay consistently with the displayed image.
+- [ ] Recommended first version: 90-degree rotation buttons plus Reset. Free-angle and automatic north-up behavior require a separate coordinate/orientation design review.
 
 ### Persistent community favorites
 
 Account favorites should be a separate, durable feature from offline device saves:
 
-- Signed-in users can choose **Save to favorites** on a public map.
-- Favorites are stored against the account and appear on every signed-in device.
-- Anonymous users retain **Save on this device** only.
-- Clearing browser storage removes a local copy but does not remove an account favorite.
+- [ ] Signed-in users can choose **Save to favorites** on a public map.
+- [ ] Favorites are stored against the account and appear on every signed-in device.
+- [x] Anonymous users retain **Save on this device** only.
+- [ ] Clearing browser storage removes a local copy but does not remove an account favorite.
 
 This is a high-priority beta product improvement if Field Atlas is offered as a cross-device community service. It should not be conflated with downloading a private cloud map into My Maps.
 
 ## Later, after the first beta
 
-- About Field Atlas and beginner instruction pages.
-- More advanced compass/north-up orientation tools.
-- Optional current basemap presentation beneath the public GPS viewer outside Compare.
-- Richer public revision history, notifications, and contributor workflows.
+- [ ] About Field Atlas and beginner instruction pages.
+- [ ] More advanced compass/north-up orientation tools.
+- [ ] Optional current basemap presentation beneath the public GPS viewer outside Compare.
+- [ ] Richer public revision history, notifications, and contributor workflows.
 
 ## Release verification
 
 Before calling the beta release candidate ready:
 
-1. Run `npm run validate`, `npm audit --omit=dev --audit-level=high`, and `npm run build`.
-2. Exercise Anchor Lab and viewer flows at desktop and mobile dimensions, including touch and maximum zoom.
-3. Exercise anonymous Public/Unlisted viewing, GPS, Compare, Save on this device, and reporting.
-4. Exercise signed-in sync, changed-revision publication, profile display, and moderation access.
-5. Confirm the Vercel deployment uses the intended Supabase/R2 environment values and callback origins.
-6. Confirm existing IndexedDB maps, cloud revisions, publications, and R2 objects are preserved; no reset, destructive migration, or broad cleanup is part of this release.
+1. [x] Run `npm run validate`, `npm audit --omit=dev --audit-level=high`, and `npm run build`.
+2. [ ] Exercise Anchor Lab and viewer flows at desktop and mobile dimensions, including touch and maximum zoom.
+3. [ ] Exercise anonymous Public/Unlisted viewing, GPS, Compare, Save on this device, and reporting.
+4. [ ] Exercise signed-in sync, changed-revision publication, profile display, and moderation access.
+5. [ ] Confirm the Vercel deployment uses the intended Supabase/R2 environment values and callback origins.
+6. [ ] Confirm existing IndexedDB maps, cloud revisions, publications, and R2 objects are preserved; no reset, destructive migration, or broad cleanup is part of this release.

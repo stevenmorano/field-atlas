@@ -1,4 +1,5 @@
 import { AnchorWorkbench } from "@/features/anchor/anchor-workbench";
+import { CreatorAccessGate } from "@/features/account/creator-access-gate";
 
 export const metadata = {
   title: "Anchor lab",
@@ -8,7 +9,9 @@ export const metadata = {
 export default function AnchorPage() {
   return (
     <main id="main-content">
-      <AnchorWorkbench />
+      <CreatorAccessGate returnTo="/anchor">
+        <AnchorWorkbench />
+      </CreatorAccessGate>
     </main>
   );
 }

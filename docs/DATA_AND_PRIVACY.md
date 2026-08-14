@@ -1,7 +1,7 @@
 # Local data and privacy
 
 Status: current implementation  
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-14
 
 ## Storage model
 
@@ -75,7 +75,7 @@ The viewer starts `watchPosition` only after **Find me** and clears it when hidd
 
 ## Network and cloud boundary
 
-Without configuration, user image Blobs, metadata, and anchors are not uploaded. With an account, **Sync privately** or **Sync all local maps** explicitly sends:
+Without configuration, user image Blobs, metadata, and anchors are not uploaded. With an account, **Finish map** or **Save progress to cloud** explicitly sends:
 
 - the unchanged original image to the owner's private R2 key;
 - structured map metadata and anchor pairs to RLS-protected Postgres tables; and
@@ -88,13 +88,13 @@ Live coordinates, accuracy readings, viewing history, and traveled paths are exc
 - Esri World Imagery; or
 - a configured MapLibre style and its referenced providers.
 - Supabase Auth/Postgres after account sign-in; or
-- Cloudflare R2 through short-lived single-object URLs during explicit sync/download.
+- Cloudflare R2 through short-lived single-object URLs during explicit cloud checkpoint/download.
 
 The production service worker caches same-origin application resources, not a complete cross-origin basemap.
 
 ## Data-loss risks
 
-IndexedDB is durable browser storage, not a backup. Data may be lost if the user clears site data, removes the browser profile, uses private-browsing storage, changes origin, or the browser evicts storage. Configured account sync can create and restore a separate copy, but it is explicit rather than continuous background backup.
+IndexedDB is durable browser storage, not a backup. Data may be lost if the user clears site data, removes the browser profile, uses private-browsing storage, changes origin, or the browser evicts storage. Configured account backup creates and restores a separate copy when a map is finished or the user chooses **Save progress to cloud**; it is checkpoint-based rather than continuous background upload.
 
 Field Atlas now provides a portable, versioned `.fieldatlas` backup containing active saved maps, exact original image bytes, anchors and metadata, plus the active unfinished draft. Import validates the package before writing, skips exact duplicates, preserves divergent same-ID records as separate imported copies, and keeps the current draft by default.
 

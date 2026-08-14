@@ -73,14 +73,21 @@ async function writeSavedMap(map: LocalSavedMap) {
   }
 }
 
-export async function storeDownloadedCloudMap(map: LocalSavedMap) {
+export async function storeDownloadedCloudMap(
+  map: LocalSavedMap,
+  options: Readonly<{ replaceIfOlder?: boolean; replaceExisting?: boolean }> = {},
+) {
   const existing = await readSavedMapRecord(map.id);
   if (existing) {
-    return { map: existing, added: false } as const;
+    if (options.replaceExisting || (options.replaceIfOlder && map.updatedAt > existing.updatedAt)) {
+      await writeSavedMap(map);
+      return { map, added: false, updated: true } as const;
+    }
+    return { map: existing, added: false, updated: false } as const;
   }
 
   await writeSavedMap(map);
-  return { map, added: true } as const;
+  return { map, added: true, updated: false } as const;
 }
 
 async function writeSavedMaps(maps: readonly LocalSavedMap[]) {
@@ -149,6 +156,18 @@ export async function updateSavedMapContent(mapId: string, content: SavedMapCont
     return null;
   }
 
+  const contentUnchanged = existing.imageName === content.imageName
+    && existing.imageBlob.size === content.imageBlob.size
+    && existing.imageBlob.type === content.imageBlob.type
+    && existing.imageDimensions.width === content.imageDimensions.width
+    && existing.imageDimensions.height === content.imageDimensions.height
+    && existing.targetZoom === content.targetZoom
+    && existing.basemapMode === content.basemapMode
+    && JSON.stringify(existing.anchors) === JSON.stringify(content.anchors);
+  if (contentUnchanged) {
+    return existing;
+  }
+
   const updated: LocalSavedMap = {
     ...existing,
     ...content,
@@ -156,4 +175,17 @@ export async function updateSavedMapContent(mapId: string, content: SavedMapCont
   };
   await writeSavedMap(updated);
   return updated;
+}
+
+export async function deleteSavedMap(mapId: string) {
+  const database = await openLocalDatabase();
+
+  try {
+    const transaction = database.transaction(SAVED_MAPS_STORE, "readwrite");
+    const completed = transactionCompletion(transaction);
+    transaction.objectStore(SAVED_MAPS_STORE).delete(mapId);
+    await completed;
+  } finally {
+    database.close();
+  }
 }

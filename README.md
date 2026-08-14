@@ -2,7 +2,7 @@
 
 Field Atlas is a web-first application for putting live browser GPS on almost any raster map: historic atlases, trail signs, illustrated zoo maps, amusement-park maps, aerial photographs, and maps whose scale or orientation differs from modern geography.
 
-The current build is a local-first functional beta with optional account sync and community publishing. No account or backend is required for creation, local viewing, GPS, comparison, backup, or restore. Configured cloud services add private cross-device copies plus anonymous Public/Unlisted sharing.
+The current build is a local-first functional beta with account-gated creator tools and community publishing. Anonymous visitors can browse public maps, use GPS, and compare; a signed-in account is required before upload, anchoring, editing, map creation, cloud backup, or publishing. Configured cloud services add private cross-device copies plus anonymous Public/Unlisted sharing.
 
 ## Current capabilities
 
@@ -12,12 +12,14 @@ The current build is a local-first functional beta with optional account sync an
 - Improve predictions progressively with similarity, affine, and triangulated piecewise-affine transforms.
 - Undo, redo, delete, clear, and resume anchor work with debounced IndexedDB autosave.
 - Finish a map with structured title, place, date, subject, style, activity, source, and visibility metadata.
+- Save drafts automatically on the device, back up finished maps, and create additional cloud checkpoints from My Maps.
 - Keep multiple high-resolution maps in the browser-local My Maps library.
+- See local and cloud-only completed maps together, open or Compare them online, optionally save a copy for offline use, or remove only the local offline copy.
 - Reopen a saved map for additional anchors without creating an accidental duplicate.
 - View a saved image at full resolution and project foreground browser GPS onto it with an accuracy area.
 - Compare a saved map as a warped, adjustable-opacity overlay on a live basemap.
 - Export every active saved map plus the unfinished draft to one verified `.fieldatlas` backup, then preview and restore it without overwriting existing work.
-- Optionally sign in with email/password and explicitly copy local maps to private, revisioned Supabase and Cloudflare R2 storage.
+- Sign in with email/password before creator work and explicitly checkpoint private, revisioned Supabase and Cloudflare R2 storage.
 - List account maps on another device and download a verified original image plus its metadata and anchors into that browser.
 - Publish an explicitly selected synced revision as Public or tokenized Unlisted without waiting for preapproval.
 - Recognize an already-published revision and avoid duplicate publication records or duplicate public image processing.
@@ -26,7 +28,7 @@ The current build is a local-first functional beta with optional account sync an
 - Use generated public usernames, contribution profiles, simple milestones, and an administrator post-publication queue.
 - Install the production build as a PWA with a small offline application shell.
 
-Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, publication-deduplication, and the complete administrator moderation lifecycle. The beta-readiness gate is tracked in [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md); reliable interaction, public Compare, clear revision updates, and production verification remain before broader invitations. PDF conversion, cropping, persistent community favorites, and full production offline packages remain future work.
+Discover falls back to four sample records when community services are not configured. The configured development environment has completed account, sync, Public/Unlisted publishing, anonymous viewing/reporting, profile, GPS, publication-deduplication, and the complete administrator moderation lifecycle. The beta-readiness gate is tracked in [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md); desktop/mobile interaction verification, the changed-revision public update workflow, persistent community favorites, and production verification remain before broader invitations. PDF conversion, cropping, and full production offline packages remain future work.
 
 ## Run locally
 
@@ -100,6 +102,6 @@ Feature decision records are kept in `docs/` beside the current guides.
 
 ## Local-data warning
 
-Saved maps and the active draft live in IndexedDB for the current browser profile and origin. Optional cloud sync creates a separate account copy only after an explicit action; it never removes the local record. Use **Back up all maps** before clearing site data or moving devices even when cloud sync is configured.
+Saved maps and the active draft live in IndexedDB for the current browser profile and origin. Cloud checkpoints create a separate account copy only when a map is finished or the creator chooses **Save progress to cloud**; they never remove the local record. Use **Back up all maps** before clearing site data or moving devices even when cloud backup is configured.
 
 Live GPS coordinates are processed in memory only. The viewer does not store a location trail or send coordinates to an application server.

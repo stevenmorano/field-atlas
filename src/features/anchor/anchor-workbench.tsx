@@ -33,6 +33,7 @@ import {
   saveNamedMap,
   updateSavedMapContent,
 } from "@/features/maps/local-saved-map-store";
+import { syncLocalMapToCloud } from "@/features/cloud/cloud-map-service";
 import { MapMetadataDialog } from "@/features/maps/map-metadata-dialog";
 import {
   EMPTY_MAP_METADATA,
@@ -40,6 +41,7 @@ import {
 } from "@/features/maps/saved-map-types";
 import { createGeoreferenceModel } from "@/lib/georeferencing/create-georeference-model";
 import type { AnchorPair, GeographicPoint, ImagePoint } from "@/lib/georeferencing/types";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 type AnchorHistory = Readonly<{
   past: readonly (readonly AnchorPair[])[];
@@ -81,7 +83,7 @@ type MapSaveStatus = "idle" | "saving" | "saved" | "error";
 
 const DEFAULT_IMAGE = "/demo-park-map.svg";
 const DEFAULT_IMAGE_DIMENSIONS: ImageDimensions = { width: 1_200, height: 800 };
-const MIN_TARGET_ZOOM = 1;
+const MIN_TARGET_ZOOM = 0.5;
 const MAX_TARGET_ZOOM = 32;
 const TARGET_ZOOM_BUTTON_FACTOR = 1.25;
 const PAN_THRESHOLD_PX = 6;
@@ -177,6 +179,10 @@ function imagePointFromPointer(
   return rotatedPointToImagePoint(displayedPoint, dimensions, rotation);
 }
 
+function imagePointIsWithinBounds(point: ImagePoint, dimensions: ImageDimensions) {
+  return point.x >= 0 && point.x <= dimensions.width && point.y >= 0 && point.y <= dimensions.height;
+}
+
 function markerElement(className: string, label: string) {
   const element = document.createElement("button");
   element.className = className;
@@ -204,6 +210,7 @@ function titleFromImageName(imageName: string) {
 }
 
 export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: boolean }>) {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [history, dispatch] = useReducer(anchorReducer, INITIAL_HISTORY);
   const [imageSource, setImageSource] = useState(DEFAULT_IMAGE);
   const [imageName, setImageName] = useState("Demo illustrated park map");
@@ -211,6 +218,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
   const [targetZoom, setTargetZoom] = useState(1);
   const [targetRotation, setTargetRotation] = useState<TargetViewRotation>(0);
   const [hoverImagePoint, setHoverImagePoint] = useState<ImagePoint | null>(null);
+  const [hoverGeographicPoint, setHoverGeographicPoint] = useState<GeographicPoint | null>(null);
   const [pendingImagePoint, setPendingImagePoint] = useState<ImagePoint | null>(null);
   const [pendingGeographicPoint, setPendingGeographicPoint] = useState<GeographicPoint | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -240,6 +248,8 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
   const centerAfterRotationRef = useRef(false);
   const anchors = history.present;
   const model = useMemo(() => createGeoreferenceModel(anchors), [anchors]);
+  const modelRef = useRef(model);
+  const imageDimensionsRef = useRef(imageDimensions);
   const targetDisplayDimensions = useMemo(
     () => rotatedImageDimensions(imageDimensions, targetRotation),
     [imageDimensions, targetRotation],
@@ -252,6 +262,14 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       title: imageSource === DEFAULT_IMAGE ? "" : titleFromImageName(imageName),
     }
   ), [imageName, imageSource, savedMapMetadata]);
+
+  useEffect(() => {
+    modelRef.current = model;
+  }, [model]);
+
+  useEffect(() => {
+    imageDimensionsRef.current = imageDimensions;
+  }, [imageDimensions]);
 
   useEffect(() => {
     pendingImagePointRef.current = pendingImagePoint;
@@ -357,6 +375,26 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         }
 
         setPendingGeographicPoint({ longitude: event.lngLat.lng, latitude: event.lngLat.lat });
+      });
+      map.on("mousemove", (event) => {
+        const geographicPoint = { longitude: event.lngLat.lng, latitude: event.lngLat.lat };
+        const estimate = modelRef.current.projectGeographicPoint({
+          longitude: geographicPoint.longitude,
+          latitude: geographicPoint.latitude,
+        });
+
+        if (!estimate) {
+          setHoverImagePoint(null);
+          setHoverGeographicPoint(null);
+          return;
+        }
+
+        setHoverImagePoint(imagePointIsWithinBounds(estimate.point, imageDimensionsRef.current) ? estimate.point : null);
+        setHoverGeographicPoint(geographicPoint);
+      });
+      map.on("mouseout", () => {
+        setHoverImagePoint(null);
+        setHoverGeographicPoint(null);
       });
       mapRef.current = map;
     });
@@ -483,7 +521,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!mapReady || !map || !hoverEstimate || pendingImagePoint) {
+    if (!mapReady || !map || (!hoverEstimate && !hoverGeographicPoint) || pendingImagePoint) {
       predictionMarkerRef.current?.remove();
       predictionMarkerRef.current = null;
       return;
@@ -495,10 +533,12 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         return;
       }
 
-      const coordinates: [number, number] = [
-        hoverEstimate.point.longitude,
-        hoverEstimate.point.latitude,
-      ];
+      const geographicPoint = hoverGeographicPoint ?? hoverEstimate?.point;
+      if (!geographicPoint) {
+        return;
+      }
+
+      const coordinates: [number, number] = [geographicPoint.longitude, geographicPoint.latitude];
 
       if (!predictionMarkerRef.current) {
         predictionMarkerRef.current = new maplibre.Marker({
@@ -514,7 +554,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
     return () => {
       cancelled = true;
     };
-  }, [hoverEstimate, mapReady, pendingImagePoint]);
+  }, [hoverEstimate, hoverGeographicPoint, mapReady, pendingImagePoint]);
 
   useEffect(() => {
     return () => {
@@ -703,6 +743,20 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
           basemapMode,
         },
       });
+      let cloudBackupError: string | null = null;
+      if (supabase) {
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (!data.user) {
+            throw new Error("Sign in to back up this map to your account.");
+          }
+          await syncLocalMapToCloud(map, data.user.id);
+        } catch {
+          cloudBackupError = "Saved locally. Cloud backup is still pending; you can retry it from My Maps.";
+        }
+      } else {
+        cloudBackupError = "Saved locally. Cloud backup is unavailable until account setup is complete.";
+      }
       const savedAt = Date.now();
       await writeCurrentAnchorDraft({
         savedAt,
@@ -721,6 +775,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       setLastSavedAt(savedAt);
       setDraftStatus("saved");
       setMapSaveStatus("saved");
+      setMapSaveError(cloudBackupError);
       setMetadataDialogOpen(false);
     } catch {
       setMapSaveStatus("error");
@@ -747,7 +802,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       Math.max(0, clientY === undefined ? container.clientHeight / 2 : clientY - bounds.top),
     );
 
-    const currentEdgePadding = currentZoom > 1 ? TARGET_EDGE_PADDING_PX : 0;
+    const currentEdgePadding = currentZoom !== 1 ? TARGET_EDGE_PADDING_PX : 0;
     targetZoomFocusRef.current = {
       contentXAtZoomOne: (container.scrollLeft + viewportX) / currentZoom,
       contentYAtZoomOne: (container.scrollTop - currentEdgePadding + viewportY) / currentZoom,
@@ -767,7 +822,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       return;
     }
 
-    const nextEdgePadding = targetZoom > 1 ? TARGET_EDGE_PADDING_PX : 0;
+    const nextEdgePadding = targetZoom !== 1 ? TARGET_EDGE_PADDING_PX : 0;
     container.scrollLeft = focus.contentXAtZoomOne * targetZoom - focus.viewportX;
     container.scrollTop = focus.contentYAtZoomOne * targetZoom + nextEdgePadding - focus.viewportY;
     targetZoomFocusRef.current = null;
@@ -846,7 +901,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
   }, [zoomTargetAt]);
 
   function handleTargetPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) {
+    if ((event.pointerType === "mouse" && event.button !== 0) || (event.target as HTMLElement).closest("button")) {
       return;
     }
 
@@ -863,6 +918,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
       scrollTop: container.scrollTop,
       moved: false,
     };
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -871,6 +927,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
     const container = targetScrollRef.current;
 
     if (gesture?.pointerId === event.pointerId && container) {
+      event.preventDefault();
       const deltaX = event.clientX - gesture.startX;
       const deltaY = event.clientY - gesture.startY;
 
@@ -883,7 +940,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         container.scrollLeft = gesture.scrollLeft - deltaX;
         container.scrollTop = gesture.scrollTop - deltaY;
         setHoverImagePoint(null);
-        event.preventDefault();
+        setHoverGeographicPoint(null);
         return;
       }
     }
@@ -891,6 +948,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
     const frame = targetImageFrameRef.current;
     if (frame) {
       setHoverImagePoint(imagePointFromPointer(event, imageDimensions, targetRotation, frame));
+      setHoverGeographicPoint(null);
     }
   }
 
@@ -913,6 +971,11 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         beginAnchor(imagePointFromPointer(event, imageDimensions, targetRotation, frame));
       }
     }
+  }
+
+  function handleTargetLostPointerCapture() {
+    targetImageFrameRef.current?.removeAttribute("data-panning");
+    targetPanRef.current = null;
   }
 
   return (
@@ -971,7 +1034,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         <span className="draft-status" data-state={draftStatus} role="status" aria-live="polite">
           {draftStatusText()}
         </span>
-        {mapSaveStatus === "saved" ? <span className="map-save-status">Saved to My Maps</span> : null}
+        {mapSaveStatus === "saved" ? <span className="map-save-status">{mapSaveError ? "Saved locally · cloud backup pending" : "Saved to My Maps · backed up"}</span> : null}
         <div className="anchor-toolbar__spacer" />
         <span className="anchor-toolbar__filename" title={imageName}>{imageName}</span>
       </div>
@@ -1028,14 +1091,18 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
             <div
               className="target-scroll"
               ref={targetScrollRef}
-              data-zoomed={targetZoom > 1 ? "true" : "false"}
+              data-zoomed={targetZoom !== 1 ? "true" : "false"}
+              data-zoomed-out={targetZoom < 1 ? "true" : "false"}
               onPointerDown={handleTargetPointerDown}
               onPointerMove={handleTargetPointerMove}
               onPointerUp={(event) => finishTargetPointer(event)}
               onPointerCancel={(event) => finishTargetPointer(event, true)}
+              onLostPointerCapture={handleTargetLostPointerCapture}
+              onDragStart={(event) => event.preventDefault()}
               onPointerLeave={() => {
                 if (!targetPanRef.current) {
                   setHoverImagePoint(null);
+                  setHoverGeographicPoint(null);
                 }
               }}
             >
@@ -1046,6 +1113,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
                   aspectRatio: targetDisplayDimensions.width.toString() + " / " + targetDisplayDimensions.height.toString(),
                   width: (targetZoom * 100).toString() + "%",
                 }}
+                onDragStart={(event) => event.preventDefault()}
               >
                 <div
                   className="target-image-rotation-layer"
@@ -1103,6 +1171,23 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
                     style={(() => {
                       const displayedPoint = imagePointToRotatedPoint(
                         pendingImagePoint,
+                        imageDimensions,
+                        targetRotation,
+                      );
+                      return {
+                        left: ((displayedPoint.x / targetDisplayDimensions.width) * 100).toString() + "%",
+                        top: ((displayedPoint.y / targetDisplayDimensions.height) * 100).toString() + "%",
+                      };
+                    })()}
+                    aria-hidden="true"
+                  />
+                ) : null}
+                {hoverImagePoint && !pendingImagePoint ? (
+                  <span
+                    className="target-hover-marker"
+                    style={(() => {
+                      const displayedPoint = imagePointToRotatedPoint(
+                        hoverImagePoint,
                         imageDimensions,
                         targetRotation,
                       );
