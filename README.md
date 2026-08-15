@@ -48,6 +48,9 @@ Open [http://localhost:3000](http://localhost:3000). Useful routes:
 | `/anchor/new` | Safely start a fresh map after checking for an active draft |
 | `/my-maps` | Search and open locally saved maps |
 | `/account` | Create an account, sign in, and edit the public username/profile |
+| `/about` | Learn why Field Atlas exists and how creator and visitor workflows differ |
+| `/how-to-use` | Beginner walkthrough for browsing, GPS, Compare, anchoring, saving, and sharing |
+| `/changelog` | Plain-language record of user-facing features and improvements |
 | `/maps/[mapId]` | Local or anonymous public high-resolution GPS viewer |
 | `/maps/[mapId]/compare` | Warped overlay comparison |
 | `/profiles/[username]` | Public mapmaker contributions and milestones |
@@ -94,6 +97,7 @@ Start with the [documentation index](docs/README.md).
 - [Local data and privacy](docs/DATA_AND_PRIVACY.md)
 - [Cloud setup](docs/CLOUD_SETUP.md)
 - [Beta readiness](docs/BETA_READINESS.md)
+- [Public information pages](docs/public-information-pages.md)
 - [Product and technical design](PRODUCT_DESIGN.md)
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Changelog](CHANGELOG.md)

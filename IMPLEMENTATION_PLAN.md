@@ -36,6 +36,7 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Post-publication administrator queue with check, changes-requested, hide, and restore actions.
 - [x] Exact duplicate-publication protection before R2 processing.
 - [x] Unit tests and lint/type/test/build validation workflow.
+- [x] Public, account-free About, How to use, and user-facing Changelog pages with responsive walkthrough visuals and shared navigation links.
 
 ## Completed increment: portable backup and restore
 
@@ -62,14 +63,15 @@ Implemented design details:
 ## Next increments
 
 1. **Creator account and unified My Maps workflow:** account gate, Drafts-first library, merged local/cloud records, explicit checkpoints, client/API cooldown, and Download/Remove offline controls are implemented locally. Finish release verification and database-level concurrency hardening. See [`docs/my-maps-workflow-redesign.md`](docs/my-maps-workflow-redesign.md).
-2. **Beta-readiness interaction gate:** viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, reduced zoom, reciprocal hover, and maximum-zoom dragging are implemented locally; verify desktop and mobile touch behavior.
-3. **Public workflow gate:** anonymous Compare, optional source/reference metadata, public/unlisted viewing, reporting, profiles, and moderation are implemented locally. Clarify and verify the changed-revision public update workflow before beta.
-4. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
-5. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
-6. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
-7. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
-8. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
-9. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
+2. **Public information pages:** About, How to use, and Changelog are implemented locally; verify the final desktop/mobile presentation on the release candidate. See [`docs/public-information-pages.md`](docs/public-information-pages.md).
+3. **Beta-readiness interaction gate:** viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, reduced zoom, reciprocal hover, and maximum-zoom dragging are implemented locally; verify desktop and mobile touch behavior.
+4. **Public workflow gate:** anonymous Compare, optional source/reference metadata, public/unlisted viewing, reporting, profiles, and moderation are implemented locally. Clarify and verify the changed-revision public update workflow before beta.
+5. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
+6. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
+7. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
+8. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
+9. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
+10. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
 
 ## Completed increment: moderation release gate
 

@@ -30,6 +30,7 @@ This folder separates documentation of the **working local-first, account-gated 
 - [`community-publishing-foundation.md`](community-publishing-foundation.md)
 - [`publication-deduplication.md`](publication-deduplication.md)
 - [`my-maps-workflow-redesign.md`](my-maps-workflow-redesign.md)
+- [`public-information-pages.md`](public-information-pages.md)
 
 These records capture accepted scope, alternatives, and decisions. If implementation behavior changes, update the corresponding record together with the current-state guides.
 

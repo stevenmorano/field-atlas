@@ -92,7 +92,7 @@ This is a high-priority beta product improvement if Field Atlas is offered as a 
 
 ## Later, after the first beta
 
-- [ ] About Field Atlas and beginner instruction pages.
+- [x] About Field Atlas and beginner instruction pages are available at `/about` and `/how-to-use`; the user-facing release history is at `/changelog`.
 - [ ] More advanced compass/north-up orientation tools.
 - [ ] Optional current basemap presentation beneath the public GPS viewer outside Compare.
 - [ ] Richer public revision history, notifications, and contributor workflows.

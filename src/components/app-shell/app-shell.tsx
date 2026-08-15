@@ -13,6 +13,7 @@ const DESKTOP_LINKS = [
   { href: "/", label: "Discover" },
   { href: "/anchor", label: "Anchor lab" },
   { href: "/my-maps", label: "My maps" },
+  { href: "/about", label: "Learn" },
   { href: "/account", label: "Account" },
 ] as const;
 
@@ -31,7 +32,7 @@ export function AppShell({ children }: AppShellProps) {
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             {DESKTOP_LINKS.map((link) => (
-              <Link className="desktop-nav__link" href={link.href} key={link.href}>
+              <Link className="desktop-nav__link" href={link.href as Route} key={link.href}>
                 {link.label}
               </Link>
             ))}
@@ -43,6 +44,16 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
       {children}
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <span>Field Atlas · Any map · live position</span>
+          <nav aria-label="Information">
+            <Link href={"/about" as Route}>About</Link>
+            <Link href={"/how-to-use" as Route}>How to use</Link>
+            <Link href={"/changelog" as Route}>Changelog</Link>
+          </nav>
+        </div>
+      </footer>
       <MobileNav />
     </div>
   );

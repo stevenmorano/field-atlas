@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-14 - Public information pages
+
+- Added account-free **About Field Atlas**, **How to use**, and user-facing **Changelog** pages.
+- Added responsive privacy-safe walkthrough visuals explaining public viewing, GPS, Compare, creator accounts, Anchor Lab, saving, and sharing.
+- Added Learn links to desktop/mobile navigation and a shared information footer without changing the creator workflow.
+
 ## 2026-08-14 - Creator account and unified My Maps workflow
 
 - Added an account gate before image upload, Anchor Lab, editing, map creation, cloud backup, and publishing while keeping anonymous public viewing, GPS, and Compare open.
