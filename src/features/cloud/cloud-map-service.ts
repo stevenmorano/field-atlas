@@ -148,7 +148,9 @@ export async function downloadCloudMapToDevice(
 
 export async function loadCloudMapForViewing(mapId: string) {
   const detailResponse = await fetch(`/api/cloud/maps/${mapId}`, { cache: "no-store" });
-  if (detailResponse.status === 401 || detailResponse.status === 404) {
+  // A public visitor may not have a configured or authorized private cloud map.
+  // Let the caller continue to the public publication endpoint in that case.
+  if (!detailResponse.ok) {
     return null;
   }
   const cloudMap = parseCloudMapDownload(await requireJson(detailResponse));
