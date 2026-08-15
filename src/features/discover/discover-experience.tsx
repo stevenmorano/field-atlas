@@ -260,14 +260,24 @@ export function DiscoverExperience() {
               {coveringCount > 0 ? `${coveringCount} maps cover your position` : "Maps worth unfolding"}
             </h2>
           </div>
-          <label className="search-field">
-            <span className="sr-only">Search maps</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-              <path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search place, year, or map" />
-          </label>
+          <div className="catalog-section__tools">
+            <label className="search-field">
+              <span className="sr-only">Search maps</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search place, year, or map" />
+            </label>
+            <button
+              className="button button--quiet"
+              type="button"
+              onClick={retryCommunityCatalog}
+              disabled={communityCatalogStatus === "loading"}
+            >
+              {communityCatalogStatus === "loading" ? "Refreshing…" : "Refresh maps"}
+            </button>
+          </div>
         </div>
 
         <div className="filter-row" role="group" aria-label="Filter maps by subject">

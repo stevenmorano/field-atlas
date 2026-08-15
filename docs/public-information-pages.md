@@ -66,6 +66,7 @@ The first implementation may use neutral, privacy-safe walkthrough visuals. Real
 - [x] The pages contain no storage, cloud, publication, GPS, or account reads/writes.
 - [ ] Verify final desktop/mobile presentation on the release candidate deployment.
 - [ ] Replace the neutral walkthrough illustrations with reviewed app screenshots after removing private map names, account details, coordinates, and other sensitive data.
+- [ ] Link the future Discover world-map and compact-list views from the public guide once those catalog modes exist.
 
 ## Assumptions
 

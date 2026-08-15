@@ -7,6 +7,7 @@ import {
   parseReportRequest,
   publicationModerationLabel,
   publicationMatchesSettings,
+  publicationNeedsUpdate,
   type OwnerPublication,
 } from "@/features/community/community-contract";
 
@@ -115,6 +116,12 @@ describe("community contracts", () => {
       ...settings,
       visibility: "unlisted",
     })).toBe(false);
+  });
+
+  it("detects when the effective public copy is on an older revision", () => {
+    expect(publicationNeedsUpdate(publication, requestId)).toBe(true);
+    expect(publicationNeedsUpdate(publication, publication.revisionId)).toBe(false);
+    expect(publicationNeedsUpdate(null, requestId)).toBe(false);
   });
 
   it("requires reasons for corrective moderation actions", () => {

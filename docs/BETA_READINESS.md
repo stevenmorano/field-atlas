@@ -1,7 +1,7 @@
 # Beta readiness
 
 Status: beta backlog captured; the current production deployment is not yet the public beta release candidate
-Last reviewed: 2026-08-14
+Last reviewed: 2026-08-15
 
 This document is the working release checklist for people who did not build Field Atlas. It records the usability problems, workflow gaps, and product decisions that must be clear before inviting a broader group of testers.
 
@@ -24,6 +24,7 @@ Status key: `[x]` implemented and locally validated · `[ ]` still needs impleme
 - [x] The uploaded-map pane can zoom out to 50% so large sheets can be viewed as a whole while anchoring.
 - [x] Reduced-zoom uploaded maps are centered below the floating controls, and native image dragging is disabled while pointer capture handles panning. Lost pointer capture also clears the active drag state.
 - [x] Hovering either Anchor Lab pane previews the corresponding point in the other pane with a red guide marker.
+- [x] Folded-mesh warnings identify the exact anchor numbers, distinguish folded-triangle count from unique involved-anchor count, and outline each affected triangle in both panes; the matching markers and correction-history rows are highlighted.
 - [ ] Add touch pinch-to-zoom to the uploaded-map pane and verify it at normal and maximum zoom.
 - [ ] Verify pointer, touch, trackpad, wheel zoom, and 3,200% zoom behavior without changing anchor coordinates or existing browser maps.
 
@@ -31,15 +32,17 @@ Status key: `[x]` implemented and locally validated · `[ ]` still needs impleme
 
 - [x] Public and Unlisted viewers show **Compare with today** directly in the header; Unlisted links carry their share token into Compare.
 - [x] Discover shows a clear retry state when the community catalog is unreachable instead of substituting sample map cards.
+- [x] Discover exposes **Refresh maps** and requests the catalog without a cache so a newly completed Public publication can be found immediately.
 - [x] Compare works without an account and without requiring **Save on this device** first.
 - [x] Compare reuses the warped overlay behavior: Street, Satellite, Hybrid, opacity, visibility, and Fit overlay.
 - [x] GPS viewing and comparison remain separate, clearly labeled actions.
+- [x] Public map detail continues to the authorized public copy when no private cloud session or private cloud map is available.
 
 ### 4. Make public revision updates understandable
 
-- [ ] Detect when a local map has newer anchors, details, or imagery than the currently published revision.
-- [ ] Explain the sequence in plain language: **Sync changes**, then **Update public map**.
-- [ ] Preserve immutable publication history; updating must create a new publication snapshot rather than silently changing an existing public record.
+- [x] Detect when the latest synced cloud revision is newer than the currently published revision.
+- [x] Explain the sequence in plain language: **Save progress to cloud**, then **Update public map**.
+- [x] Preserve immutable publication history; updating creates a new publication snapshot rather than silently changing the existing public record.
 
 ### 5. Make sharing metadata fit real-world sources
 
@@ -70,6 +73,10 @@ The accepted redesign is documented in [`my-maps-workflow-redesign.md`](my-maps-
 - [x] Keep cloud-only cards usable online with **Open map** and **Compare**; make **Save for offline**, **Download latest**, and **Remove from this device** optional device actions that never delete the account map or publication.
 - [x] Detect a cloud checkpoint with more anchors than the device copy even when timestamps disagree, and require an explicit **Download latest** action before replacing the local record.
 - [x] Add a small **Refresh maps** fallback while preserving cached records when a refresh fails.
+- [x] Reflect the cloud publication state on each local My Maps card and refresh it after Share or Make private completes.
+- [x] Reconcile an idempotent **already backed up** response with the local My Maps card so timestamp-only local saves do not remain stuck as unsynced work; a later real edit still requires a new checkpoint.
+- [x] Share explains a stale private cloud checkpoint and offers **Save progress to cloud** inline before publication.
+- [x] Make the Finish map dialog distinguish local “Ready to share later” preparation from actual Public/Unlisted publication.
 
 ### Orientation and rotation
 
@@ -95,6 +102,7 @@ This is a high-priority beta product improvement if Field Atlas is offered as a 
 - [x] About Field Atlas and beginner instruction pages are available at `/about` and `/how-to-use`; the user-facing release history is at `/changelog`.
 - [ ] More advanced compass/north-up orientation tools.
 - [ ] Optional current basemap presentation beneath the public GPS viewer outside Compare.
+- [ ] Add a public world-map directory view alongside a compact, searchable list of all available maps.
 - [ ] Richer public revision history, notifications, and contributor workflows.
 
 ## Release verification

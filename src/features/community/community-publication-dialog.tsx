@@ -8,6 +8,7 @@ import type { CloudMapSummary } from "@/features/cloud/cloud-map-contract";
 import {
   publicationMatchesSettings,
   publicationModerationLabel,
+  publicationNeedsUpdate,
   type OwnerPublicationStatus,
   type PublicationVisibility,
   type RightsBasis,
@@ -17,6 +18,9 @@ import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 type Props = Readonly<{
   map: LocalSavedMap;
   remote: CloudMapSummary;
+  onChanged: () => void;
+  onSync?: () => Promise<boolean>;
+  cloudIsCurrent?: boolean;
   onClose: () => void;
 }>;
 
@@ -32,10 +36,11 @@ function createShareToken() {
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
-export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
+export function CommunityPublicationDialog({ map, remote, onChanged, onSync, cloudIsCurrent: cloudIsCurrentOverride, onClose }: Props) {
   const [status, setStatus] = useState<OwnerPublicationStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [visibility, setVisibility] = useState<PublicationVisibility>("public");
   const [rightsBasis, setRightsBasis] = useState<RightsBasis>("own_or_authorized");
   const [sourceUrl, setSourceUrl] = useState(map.metadata.source);
@@ -93,7 +98,8 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
     return () => { cancelled = true; };
   }, [map.id]);
 
-  const cloudIsCurrent = remote.clientUpdatedAt >= map.updatedAt;
+  const cloudIsCurrent = cloudIsCurrentOverride ?? remote.clientUpdatedAt >= map.updatedAt;
+  const publicRevisionNeedsUpdate = publicationNeedsUpdate(status?.publication ?? null, status?.currentRevisionId ?? null);
   const publicationUnchanged = publicationMatchesSettings(status?.publication ?? null, status?.currentRevisionId ?? null, {
     visibility,
     rightsBasis,
@@ -133,12 +139,30 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
       setPublishedVisibility(visibility);
       setMessage(null);
       await refreshStatus();
+      onChanged();
       setPublicationRequestId(null);
       setUnlistedShareToken(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Map could not be published.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function syncChanges() {
+    if (!onSync || syncing) return;
+    setSyncing(true);
+    setMessage("Saving the latest progress to your private cloud copy...");
+    try {
+      const synced = await onSync();
+      if (synced) {
+        await refreshStatus();
+        setMessage("Your private cloud copy is current. You can publish this version now.");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The latest progress could not be saved.");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -156,6 +180,7 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
       setPublishedVisibility(null);
       setMessage("The shared copy is private again. Your private cloud and local copies were not changed.");
       await refreshStatus();
+      onChanged();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Map could not be made private.");
     } finally {
@@ -178,7 +203,7 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
 
   return (
     <div className="community-dialog-backdrop" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && !busy) onClose();
+      if (event.target === event.currentTarget && !busy && !syncing) onClose();
     }}>
       <section className="community-dialog" role="dialog" aria-modal="true" aria-labelledby="community-dialog-title">
         <header>
@@ -190,7 +215,7 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
                 : `Share ${map.metadata.title}`}
             </h2>
           </div>
-          <button className="dialog-close" type="button" onClick={onClose} disabled={busy} aria-label="Close">x</button>
+          <button className="dialog-close" type="button" onClick={onClose} disabled={busy || syncing} aria-label="Close">x</button>
         </header>
 
         {sharePath && publishedVisibility ? (
@@ -222,6 +247,19 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
             {!cloudIsCurrent ? (
               <p className="community-dialog__notice community-dialog__notice--warning">Sync changes first. The private cloud revision is older than this device copy.</p>
             ) : null}
+            {!cloudIsCurrent && onSync ? (
+              <div className="community-dialog__sync-action">
+                <p>Save the latest anchors and details to your private cloud copy. Publishing will unlock when that checkpoint finishes.</p>
+                <button className="button button--quiet" type="button" onClick={() => void syncChanges()} disabled={busy || syncing}>
+                  {syncing ? "Saving progress…" : "Save progress to cloud"}
+                </button>
+              </div>
+            ) : null}
+            {cloudIsCurrent && publicRevisionNeedsUpdate ? (
+              <p className="community-dialog__notice community-dialog__notice--warning">
+                <strong>Your shared map has an older version.</strong> This cloud copy includes your latest saved changes. Choose <strong>Update {visibility === "public" ? "public map" : "shared map"}</strong> below to make the new revision live. The previous version stays in history{visibility === "unlisted" ? "; updating creates a new private link" : ""}.
+              </p>
+            ) : null}
             {status?.publicationHold ? (
               <p className="community-dialog__notice community-dialog__notice--warning">This map is hidden by moderation: {status.publicationHoldReason || "contact the site administrator."}</p>
             ) : null}
@@ -234,6 +272,7 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
                   : status.publication.visibility === "public"
                     ? <Link href={`/maps/${map.id}`}>Open shared map</Link>
                     : <span>The existing private link remains active.</span>}
+                {publicRevisionNeedsUpdate ? <span>This shared copy is older than the current cloud revision.</span> : null}
               </div>
             ) : null}
             {publicationUnchanged ? (
@@ -280,15 +319,25 @@ export function CommunityPublicationDialog({ map, remote, onClose }: Props) {
           </label>
           <label className="community-confirmation">
             <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-            <span>I understand this creates a separate shared copy that other people can open now. My original stays private.</span>
+            <span>{status?.publication
+              ? visibility === "public"
+                ? "I understand this creates a new public snapshot. The previous public version stays in history and my private map stays unchanged."
+                : "I understand this creates a new shared snapshot and private link. The previous shared version stays in history and my private map stays unchanged."
+              : "I understand this creates a separate shared copy that other people can open now. My original stays private."}</span>
           </label>
 
           <div className="community-dialog__actions">
-            <button className="button button--signal" type="submit" disabled={busy || loading || !confirmed || !cloudIsCurrent || status?.publicationHold === true || publicationUnchanged}>
-              {busy ? "Preparing..." : publicationUnchanged ? "Already published" : visibility === "public" ? "Publish publicly now" : "Create unlisted link now"}
+            <button className="button button--signal" type="submit" disabled={busy || syncing || loading || !confirmed || !cloudIsCurrent || status?.publicationHold === true || publicationUnchanged}>
+              {busy
+                ? "Preparing..."
+                : publicationUnchanged
+                  ? "Already published"
+                  : status?.publication
+                    ? visibility === "public" ? "Update public map" : "Update shared map"
+                    : visibility === "public" ? "Publish publicly now" : "Create unlisted link now"}
             </button>
-            {status?.currentPublicationId ? <button className="button button--quiet" type="button" onClick={() => void unpublish()} disabled={busy || status.publicationHold} title={status.publicationHold ? "An administrator must restore this map before sharing can change." : undefined}>Make private</button> : null}
-            <button className="button button--quiet" type="button" onClick={onClose} disabled={busy}>Cancel</button>
+            {status?.currentPublicationId ? <button className="button button--quiet" type="button" onClick={() => void unpublish()} disabled={busy || syncing || status.publicationHold} title={status.publicationHold ? "An administrator must restore this map before sharing can change." : undefined}>Make private</button> : null}
+            <button className="button button--quiet" type="button" onClick={onClose} disabled={busy || syncing}>Cancel</button>
           </div>
             </form>
             {message ? <p className="community-dialog__message" role="status">{message}</p> : null}

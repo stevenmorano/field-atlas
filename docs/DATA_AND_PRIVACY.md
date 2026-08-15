@@ -1,7 +1,7 @@
 # Local data and privacy
 
 Status: current implementation  
-Last reviewed: 2026-08-14
+Last reviewed: 2026-08-15
 
 ## Storage model
 
@@ -11,7 +11,7 @@ Field Atlas currently uses the browser's IndexedDB database `field-atlas-local` 
 | --- | --- | --- | --- |
 | `anchor-drafts` | `current` | One active record | Resume unfinished or actively edited anchor work |
 | `saved-maps` | UUID | Multiple records | Named maps shown in My Maps |
-| `cloud-sync-state` | Map UUID | At most one per synced map | Last accepted account/revision/fingerprint; never image or GPS data |
+| `cloud-sync-state` | Map UUID | At most one per synced map | Last accepted account/revision/fingerprint plus the acknowledged local timestamp; never image or GPS data |
 
 No user-created map record is stored in `localStorage`. Image files remain binary `Blob` values so high-resolution originals do not incur base64 expansion.
 
@@ -27,6 +27,8 @@ No user-created map record is stored in `localStorage`. Image files remain binar
 - optional 0/90/180/270 working-view rotation;
 - current basemap mode;
 - optional linked saved-map ID.
+
+Mesh quality warnings, including the highlighted folded triangle and its anchor numbers, are derived locally from these pairs. The diagnostic overlay does not create a separate record or transmit additional location data.
 
 The optional rotation field is backward-compatible: older records without it open at zero degrees.
 
@@ -106,7 +108,7 @@ Backup creation and import run locally. The package is a binary container with a
 
 ## Public server boundary
 
-Configured community publishing supports explicit instant Public or tokenized Unlisted access, post-publication administrator checks, anonymous reports, generated profiles, allowlisted public DTOs, and sanitized public derivatives. The unchanged original remains private in R2. Public DTOs necessarily include the published map's anchor coordinates because GPS projection depends on them, but exclude email, private filenames/keys, working revisions, live GPS, viewing history, and traveled paths. Anonymous report throttling stores a rotating HMAC token rather than a raw network address. See [`community-publishing-foundation.md`](community-publishing-foundation.md) and [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
+Configured community publishing supports explicit instant Public or tokenized Unlisted access, post-publication administrator checks, anonymous reports, generated profiles, allowlisted public DTOs, and sanitized public derivatives. The unchanged original remains private in R2. Public DTOs necessarily include the published map's anchor coordinates because GPS projection depends on them, but exclude email, private filenames/keys, working revisions, live GPS, viewing history, and traveled paths. Anonymous report throttling stores a rotating HMAC token rather than a raw network address. Public viewing remains independent of a signed-in private-cloud session; an unavailable private-cloud lookup does not expand the public data boundary. See [`community-publishing-foundation.md`](community-publishing-foundation.md) and [`../PRODUCT_DESIGN.md`](../PRODUCT_DESIGN.md).
 
 Unlisted URLs are bearer capabilities: anyone who receives the complete secret link can open that frozen publication until it is superseded, unpublished, hidden, or otherwise revoked. Store and transmit those links accordingly. The token is hashed before database storage and must never be placed in logs or committed documentation.
 

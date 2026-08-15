@@ -1,7 +1,7 @@
 # Operations and release runbook
 
 Status: small-development-beta runbook
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-15
 
 This runbook protects user work and the private/public boundary while Field Atlas moves from localhost to a hosted beta.
 
@@ -30,7 +30,7 @@ Then smoke-test:
 3. A private sync leaves the local copy available.
 4. An unchanged Share dialog says **Already published**.
 5. A legitimate visibility change becomes publishable, but cancel it unless the change is intended.
-6. A signed-out window can open a Public map, use the GPS control, choose **Save on this device**, open the profile, and submit a test report.
+6. A fresh signed-out origin can open a Public map even when no private cloud session is present, then use the GPS control, choose **Save on this device**, open the profile, and submit a test report.
 7. Browser console logs contain no application errors.
 
 ## Moderation verification

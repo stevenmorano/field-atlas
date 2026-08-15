@@ -1,7 +1,7 @@
 # User guide
 
 Status: account-gated creator beta with local drafts, private checkpoints, and community publishing
-Last reviewed: 2026-08-14
+Last reviewed: 2026-08-15
 
 ## Important storage warning
 
@@ -28,7 +28,7 @@ After two anchors, Field Atlas predicts the next basemap position using scale, r
 - **Clear** removes the current anchor set and can be undone until history is replaced.
 - Add anchors near areas where GPS or Compare alignment seems inaccurate.
 - Prefer distinct landmarks spread around the usable area. Clusters improve only a small region.
-- Treat mesh warnings seriously; contradictory or folded triangles can make GPS misleading.
+- Treat mesh warnings seriously; contradictory or folded triangles can make GPS misleading. Each folded triangle relates three anchors, but triangles can share anchors, so the warning separately reports the triangle count and the number of unique involved anchors. Anchor Lab outlines the triangles in orange in both panes, highlights the involved markers and history rows, and names the anchor numbers. Correct those specific pairs instead of clearing the whole set.
 
 ## Drafts and finished maps
 
@@ -47,7 +47,7 @@ A draft and a finished map are related but different:
 - **Map details** edits its structured metadata.
 - Starting fresh replaces the active draft, not the finished record in My Maps.
 
-Metadata includes title, description, place, subject, visual style, map date, activities, source, and private/public-ready intent. Cloud sync alone never publishes it. Public or Unlisted access always requires the separate Share action.
+Metadata includes title, description, place, subject, visual style, map date, activities, source, and a private/ready-to-share intent. **Ready to share later** is only a local label; saving the map or syncing it to your account never publishes it. Public or Unlisted access always requires the separate **Share** action.
 
 ## Use My Maps
 
@@ -73,13 +73,15 @@ Cloud controls appear when the operator has completed [`CLOUD_SETUP.md`](CLOUD_S
 
 Use **Refresh maps** if a cached page is stale. Each cloud-backed row shows the exact update date and time plus a relative label such as **10 minutes ago**, so you can confirm how recently a copy was synced.
 
+If My Maps says **Already up to date in the cloud**, no new revision was needed: the local record and current cloud revision contain the same map content. The card is treated as backed up after that acknowledgement, even if a local save gave the record a newer timestamp. A real anchor, image, or metadata change will make **Save progress to cloud** available again.
+
 Repeated syncs create immutable revisions. If another device changed the same map after this browser's last accepted revision, Field Atlas preserves the new upload as a conflict instead of silently replacing the remote current version. Conflict review UI is planned; keep both local copies and the `.fieldatlas` backup in the meantime.
 
 ## Share a map publicly or by link
 
 Community sharing appears after the operator applies all migrations in [`CLOUD_SETUP.md`](CLOUD_SETUP.md).
 
-1. Finish the map or choose **Save progress to cloud** in My Maps so the latest checkpoint is backed up.
+1. Finish the map or choose **Save progress to cloud** in My Maps so the latest checkpoint is backed up. If Share detects that the device copy is newer, choose **Save progress to cloud** directly in the warning inside the Share dialog; publishing unlocks after the checkpoint is confirmed.
 2. In My Maps, choose **Share** beside that map.
 3. Choose **Public** to list it in Discover immediately, or **Unlisted** to create an immediate secret link that is absent from Discover.
 4. Select why you are allowed to share it and add a source, license, or attribution when available. A web source is optional; for a physical map or personal photograph, use the attribution field to explain what you know.
@@ -88,7 +90,9 @@ Community sharing appears after the operator applies all migrations in [`CLOUD_S
 
 Public visitors do not need an account to open the map, use foreground GPS, save it on this device for offline use, visit the uploader profile, or report a problem. A device save is browser-local; it is not an account favorite. Public maps enter the administrator's post-publication queue but do not wait there before becoming usable.
 
-Opening Share again for the exact same synced revision and the same sharing fields shows **Already published**. Field Atlas will not create another publication or process another public image copy until the revision or a sharing choice changes. Switching visibility, rights/source/credit fields, or syncing changed anchors, details, or imagery creates a legitimate new publication.
+After publishing, the My Maps card refreshes to **Public** (or **Pending review**) when the account copy is checked. If a card still says **Ready to share**, open **Share** to see the authoritative owner status; a publication that did not finish will still offer **Publish publicly now**. If a completed Public map is not visible in Discover, use **Refresh maps** there; the catalog is intentionally fetched fresh.
+
+Opening Share again for the exact same synced revision and the same sharing fields shows **Already published**. If the latest cloud revision is newer than the public snapshot, Share explains that the public map is older and changes the action to **Update public map** (or **Update shared map** for an Unlisted map). Select it after confirming the new snapshot. The previous publication remains in immutable history while the new one becomes current. Switching visibility, rights/source/credit fields, or syncing changed anchors, details, or imagery creates a legitimate new publication.
 
 ## Maintain a public profile
 
@@ -121,6 +125,8 @@ Import never silently overwrites a saved map. Exact duplicates are skipped. A di
 5. Manual panning stops following the dot. Select **Recenter** to follow it again.
 
 GPS works only on secure origins in normal browsers; `localhost` is treated as secure for development. Some embedded or in-app browsers may deny or omit location. A saved map remains viewable without permission. Location watching stops when the page is hidden or left, and the app does not store a trail.
+
+Public and Unlisted links use the shared sanitized copy and do not require a private cloud session. A private cloud copy, when available to the signed-in owner, is checked first so the owner can open the latest account revision.
 
 Locations outside the triangulated anchor area are labeled as extrapolated and are less reliable. A point outside the image is not forced onto the map.
 
@@ -159,4 +165,4 @@ Use `/anchor/new` and confirm **Start fresh map**. `/anchor` intentionally resum
 
 ### Share says Already published
 
-That exact cloud revision and sharing setup are already live. Close the dialog if no update is needed. To publish an update, first edit and sync the map or change a visible sharing field. Use **Make private** only when you intend to stop anonymous access.
+That exact cloud revision and sharing setup are already live. Close the dialog if no update is needed. To publish an update, first edit and save the map to cloud, then open Share and choose **Update public map** when it appears. Use **Make private** only when you intend to stop anonymous access.

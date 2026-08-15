@@ -10,6 +10,8 @@ export type LocalCloudSyncState = Readonly<{
   userId: string;
   remoteRevisionId: string;
   contentFingerprint: string;
+  /** The local map version that produced the cloud checkpoint. */
+  localUpdatedAt?: number;
   syncedAt: number;
 }>;
 
@@ -24,6 +26,22 @@ export async function readCloudSyncState(mapId: string) {
     const state = await requestResult(request, "Could not read cloud sync state.");
     await completed;
     return state ?? null;
+  } finally {
+    database.close();
+  }
+}
+
+export async function readAllCloudSyncStates() {
+  const database = await openLocalDatabase();
+  try {
+    const transaction = database.transaction(CLOUD_SYNC_STATE_STORE, "readonly");
+    const completed = transactionCompletion(transaction);
+    const request = transaction.objectStore(CLOUD_SYNC_STATE_STORE).getAll() as IDBRequest<
+      LocalCloudSyncState[]
+    >;
+    const states = await requestResult(request, "Could not read cloud sync state.");
+    await completed;
+    return states;
   } finally {
     database.close();
   }

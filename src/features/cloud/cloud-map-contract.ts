@@ -36,6 +36,16 @@ export type CloudMapSummary = Readonly<{
   updatedAt: number;
 }>;
 
+export function cloudMapVisibilityLabel(
+  publicationStatus: CloudMapSummary["publicationStatus"] | null | undefined,
+  localVisibility: SavedMapMetadata["visibility"],
+) {
+  if (publicationStatus === "published") return "Public";
+  if (publicationStatus === "pending_review") return "Pending review";
+  if (publicationStatus === "rejected") return "Private";
+  return localVisibility === "private" ? "Private" : "Ready to share";
+}
+
 export type CloudMapDownload = CloudMapSummary & Readonly<{
   anchors: readonly AnchorPair[];
   targetZoom: number;

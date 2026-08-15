@@ -270,7 +270,7 @@ export function MapMetadataDialog({
                 checked={metadata.visibility === "private"}
                 onChange={() => updateField("visibility", "private")}
               />
-              <span><strong>Private</strong><small>Only in My Maps on this device</small></span>
+              <span><strong>Private</strong><small>Keep it private until you choose Share</small></span>
             </label>
             <label>
               <input
@@ -280,7 +280,7 @@ export function MapMetadataDialog({
                 checked={metadata.visibility === "public-ready"}
                 onChange={() => updateField("visibility", "public-ready")}
               />
-              <span><strong>Public-ready</strong><small>Mark it for sharing when publishing is added</small></span>
+              <span><strong>Ready to share later</strong><small>Local label only; saving does not publish</small></span>
             </label>
           </fieldset>
         </div>
@@ -290,7 +290,7 @@ export function MapMetadataDialog({
         ) : null}
 
         <footer className="map-metadata-form__footer">
-          <p>Local-only for now. Clearing this site&apos;s browser data removes saved maps.</p>
+          <p>Saves locally first. Public or Unlisted sharing is a separate action in My Maps.</p>
           <div>
             <button className="button button--quiet" type="button" onClick={onDismiss} disabled={saving}>
               Cancel

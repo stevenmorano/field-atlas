@@ -114,6 +114,7 @@ export async function syncLocalMapToCloud(map: LocalSavedMap, userId: string) {
       userId,
       remoteRevisionId: syncBody.currentRevisionId,
       contentFingerprint,
+      localUpdatedAt: map.updatedAt,
       syncedAt: Date.now(),
     });
   }
@@ -140,6 +141,7 @@ export async function downloadCloudMapToDevice(
       userId,
       remoteRevisionId: cloudMap.currentRevisionId,
       contentFingerprint: await createCloudContentFingerprint(localMap, cloudMap.assetSha256),
+      localUpdatedAt: localMap.updatedAt,
       syncedAt: Date.now(),
     });
   }

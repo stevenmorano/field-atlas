@@ -1,7 +1,7 @@
 # Implementation plan
 
 Status: creator account gate and unified My Maps slice active locally; database hardening and beta release verification next
-Last updated: 2026-08-14
+Last updated: 2026-08-15
 
 ## Delivery strategy
 
@@ -19,6 +19,7 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Street, Satellite, and Hybrid built-in basemap modes.
 - [x] Numbered predict/correct anchor workflow, delete, clear, undo, and redo.
 - [x] Similarity, affine, and Delaunay piecewise-affine georeferencing with inverse projection and mesh warnings.
+- [x] Folded-mesh warnings identify affected anchor numbers, distinguish triangle count from unique anchor count, and highlight the triangles in both Anchor Lab panes.
 - [x] Deep uploaded-map zoom up to 3200% with pointer-focused wheel behavior.
 - [x] Uploaded-map zoom out to 50%, reduced-zoom centering below controls, reciprocal pane hover previews, and pointer-capture/native-drag hardening.
 - [x] View-only 0/90/180/270-degree uploaded-map rotation.
@@ -35,8 +36,13 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Anonymous Discover, map viewing, foreground GPS, offline save, profiles, and problem reports.
 - [x] Post-publication administrator queue with check, changes-requested, hide, and restore actions.
 - [x] Exact duplicate-publication protection before R2 processing.
+- [x] Explicit public revision update detection and **Update public map** actions that preserve immutable publication history.
+- [x] Owner My Maps cards reflect cloud publication state after sharing, and Discover provides a fresh catalog refresh for newly public maps.
+- [x] Finish-map visibility copy clearly separates local ready-to-share preparation from actual community publication.
+- [x] Cloud checkpoint acknowledgements reconcile identical content after timestamp-only local saves, keeping My Maps status and the server response consistent.
 - [x] Unit tests and lint/type/test/build validation workflow.
 - [x] Public, account-free About, How to use, and user-facing Changelog pages with responsive walkthrough visuals and shared navigation links.
+- [x] Public map viewing falls through to the authorized public publication when the private cloud endpoint is unavailable, including on a fresh production-origin browser.
 
 ## Completed increment: portable backup and restore
 
@@ -64,14 +70,15 @@ Implemented design details:
 
 1. **Creator account and unified My Maps workflow:** account gate, Drafts-first library, merged local/cloud records, explicit checkpoints, client/API cooldown, and Download/Remove offline controls are implemented locally. Finish release verification and database-level concurrency hardening. See [`docs/my-maps-workflow-redesign.md`](docs/my-maps-workflow-redesign.md).
 2. **Public information pages:** About, How to use, and Changelog are implemented locally; verify the final desktop/mobile presentation on the release candidate. See [`docs/public-information-pages.md`](docs/public-information-pages.md).
-3. **Beta-readiness interaction gate:** viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, reduced zoom, reciprocal hover, and maximum-zoom dragging are implemented locally; verify desktop and mobile touch behavior.
-4. **Public workflow gate:** anonymous Compare, optional source/reference metadata, public/unlisted viewing, reporting, profiles, and moderation are implemented locally. Clarify and verify the changed-revision public update workflow before beta.
+3. **Beta-readiness interaction gate:** viewer control occlusion, GPS panel density, Anchor Lab safe pan bounds, reduced zoom, reciprocal hover, maximum-zoom dragging, and folded-mesh diagnostics are implemented locally; verify desktop and mobile touch behavior.
+4. **Public workflow gate:** anonymous Compare, optional source/reference metadata, public/unlisted viewing, reporting, profiles, moderation, and changed-revision update actions are implemented locally. Verify the complete flow on the release candidate before beta.
 5. **Orientation design:** implement and verify non-destructive default/viewer rotation, starting with 90-degree controls and Reset.
 6. **Production release gate:** run a clean production build, configure Vercel environment values, deploy, then verify authentication redirects, R2 CORS, anonymous access, GPS, and private sync on the deployed origin.
 7. **Mobile/offline release gate:** test installation, updates, storage-health messaging, offline public saves, and foreground GPS on real iPhone and Android browsers.
 8. **Persistent community favorites:** add account-backed favorites with clear separation from browser-local saves and private cloud downloads.
 9. **Operational hardening:** add publish throttles/global pause, orphan-object cleanup, report disposition history, and recovery checks before expanding beyond the small beta.
 10. **Image preparation:** add browser-independent PDF page conversion, HEIC fallback decoding, nondestructive crop, and preparation rotation.
+11. **Richer public discovery:** add a world map showing approximate public-map coverage alongside a compact, searchable list view for scanning the full catalog.
 
 ## Completed increment: moderation release gate
 

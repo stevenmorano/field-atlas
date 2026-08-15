@@ -70,6 +70,17 @@ export function publicationMatchesSettings(
   );
 }
 
+export function publicationNeedsUpdate(
+  publication: OwnerPublication | null,
+  currentRevisionId: string | null,
+) {
+  return Boolean(
+    publication
+    && currentRevisionId
+    && publication.revisionId !== currentRevisionId,
+  );
+}
+
 export function publicationModerationLabel(
   visibility: PublicationVisibility,
   moderationStatus: ModerationStatus,

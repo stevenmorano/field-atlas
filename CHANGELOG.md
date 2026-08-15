@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-15 - Anchor Lab mesh diagnostics
+
+- Folded-mesh warnings now identify the exact anchor numbers involved.
+- The affected triangle is outlined on the uploaded map and basemap, while its anchor markers and correction-history rows are highlighted for targeted correction.
+- The warning distinguishes the number of folded triangles from the number of unique anchor points involved, since several triangles may share anchors.
+
+## 2026-08-15 - Public viewer fallback
+
+- Fixed anonymous public maps that could fail to open when the private cloud endpoint was unavailable or not configured.
+- Public viewing now continues to the authorized publication copy after an unavailable private-cloud response; private cloud access remains available when it exists.
+- Added regression coverage for unauthorized, forbidden, missing, server-error, and unconfigured private-cloud responses.
+
+## 2026-08-14 - Cloud checkpoint acknowledgement
+
+- Fixed the My Maps cloud-save status when a local save changes only its timestamp but not its content: an idempotent **already backed up** response now acknowledges that local version instead of leaving the card stuck on **Changes ready to back up**.
+- The acknowledgement is stored with the local cloud-sync state, so the card remains consistent after refresh and becomes dirty again only after a real local change or a newer cloud revision.
+- Share now offers **Save progress to cloud** directly inside the stale-cloud warning, then rechecks the checkpoint before enabling publication.
+- Added regression coverage and clarified the behavior in the user, architecture, API, privacy, and beta-readiness documentation.
+
+## 2026-08-14 - Publication status and catalog freshness
+
+- My Maps now reflects the account publication state (`Public`, `Pending review`, or `Private`) instead of relying only on the local “ready to share” flag.
+- Sharing and making a map private refresh the owner library immediately, so the card and Share dialog agree without a manual reload.
+- Discover now has a deliberate **Refresh maps** action and its catalog response is explicitly non-cacheable, so a newly public map can appear as soon as the publication exists.
+- Finish-map visibility choices now explain that **Ready to share later** is only a local preparation label; actual Public or Unlisted sharing happens through **Share** in My Maps.
+
+## 2026-08-14 - Clear public revision updates
+
+- Share now identifies when the current public map is older than the latest synced cloud revision.
+- Added explicit **Update public map** and **Update shared map** actions with a plain-language immutable-history explanation.
+- Added regression coverage for older-public-revision detection and updated the user, API, architecture, and beta-readiness documentation.
+
 ## 2026-08-14 - Public information pages
 
 - Added account-free **About Field Atlas**, **How to use**, and user-facing **Changelog** pages.
@@ -64,6 +96,8 @@
 - Added cloud configuration, security-boundary, CORS, privacy, and public-publishing documentation.
 
 This project is pre-release. Entries describe the working local prototype rather than published package versions.
+
+Future discovery work is tracked separately from implemented releases; the planned world-map catalog and compact list view are recorded in [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md).
 
 ## Unreleased - 2026-08-10
 

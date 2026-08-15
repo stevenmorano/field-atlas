@@ -1,7 +1,7 @@
 # Application API reference
 
 Status: implemented browser-application API
-Last reviewed: 2026-08-12
+Last reviewed: 2026-08-15
 
 These Next.js App Router handlers support the Field Atlas web application. They are not yet a versioned third-party API. Request and response contracts may evolve with the beta.
 
@@ -11,6 +11,8 @@ These Next.js App Router handlers support the Field Atlas web application. They 
 - Authenticated routes verify the Supabase cookie session server-side.
 - Owner access is additionally constrained by Postgres row-level security and narrow database functions.
 - Public and Unlisted reads return allowlisted publication DTOs rather than raw tables.
+- Public map viewers may probe the private cloud detail route first for an owner copy; any non-success response is treated as unavailable and does not prevent the public detail route from serving an authorized publication.
+- Anchor Lab mesh warnings and triangle highlights are computed in the browser from the current anchor pairs; they do not add an API request, cloud record, or publication revision.
 - Unlisted `share` query values are bearer secrets. Never log, persist in analytics, or include them in public referrers.
 - Publication detail and authorized asset redirects use `private, no-store` so a hide or hold is checked on every request. Discover summaries remain independently reloadable.
 
@@ -28,7 +30,7 @@ These Next.js App Router handlers support the Field Atlas web application. They 
 | `POST /api/cloud/assets/[assetId]/complete` | Signed-in asset owner | Path asset ID | Verifies R2 content length/type and marks the object ready. |
 | `GET /api/cloud/assets/[assetId]` | Signed-in asset owner through RLS | Path asset ID | `307` redirect to a short-lived private R2 `GET` URL with `private, no-store`. |
 | `GET /api/cloud/maps` | Signed-in owner | None | Lists current account map summaries without image bytes. |
-| `POST /api/cloud/maps` | Signed-in owner | Map/revision payload, asset ID, content fingerprint, optional base revision | Creates/reuses an immutable revision. A stale base returns `409` and preserves the incoming conflict. |
+| `POST /api/cloud/maps` | Signed-in owner | Map/revision payload, asset ID, content fingerprint, optional base revision | Creates/reuses an immutable revision. An identical current fingerprint returns `status: "unchanged"` and its current revision ID without creating a new revision; a stale base returns `409` and preserves the incoming conflict. |
 | `GET /api/cloud/maps/[mapId]` | Signed-in owner through RLS | Path map ID | Returns the current revision, anchors, metadata, and verified asset metadata for explicit device download. |
 
 Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-contract.ts`. HEIC/HEIF may work locally through browser decoding but are not a supported public-processing input.
@@ -37,7 +39,7 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 
 | Method and path | Access | Input | Result/cache |
 | --- | --- | --- | --- |
-| `GET /api/community/maps?q=&subject=&before=` | Anonymous | Bounded search, optional subject, optional cursor | Up to 24 effective Public summaries. |
+| `GET /api/community/maps?q=&subject=&before=` | Anonymous | Bounded search, optional subject, optional cursor | Up to 24 effective Public summaries. The response is `Cache-Control: no-store` so newly published maps can be discovered immediately. |
 | `GET /api/community/maps/[mapId]?share=TOKEN` | Anonymous | Public map ID; token only for Unlisted | Effective frozen publication DTO with `private, no-store` authorization semantics. |
 | `GET /api/community/assets/[assetId]?variant=map|thumbnail&share=TOKEN` | Anonymous | Effective public asset and optional token | Non-cacheable authorized `307` redirect to short-lived sanitized WebP delivery. |
 | `GET /api/community/profiles/[username]` | Anonymous | Public username | Public profile, effective Public contributions, and milestones. |
@@ -49,7 +51,7 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 | Method and path | Access | Input | Result |
 | --- | --- | --- | --- |
 | `GET /api/community/maps/[mapId]/status` | Signed-in owner | Path map ID | Current synced/published revision, moderation hold, and frozen sharing settings. |
-| `POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. |
+| `POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication, including an explicit update of an older public snapshot. The prior publication remains immutable history. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. |
 | `POST /api/community/maps/[mapId]/unpublish` | Signed-in owner | Expected current publication ID | Ends anonymous access without deleting local/private work. |
 
 Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images.

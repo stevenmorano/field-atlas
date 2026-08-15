@@ -209,6 +209,26 @@ function titleFromImageName(imageName: string) {
     .trim();
 }
 
+function formatAnchorNumbers(numbers: readonly number[]) {
+  if (numbers.length === 0) {
+    return "none";
+  }
+
+  if (numbers.length === 1) {
+    return numbers[0].toString();
+  }
+
+  if (numbers.length === 2) {
+    return numbers[0].toString() + " and " + numbers[1].toString();
+  }
+
+  return numbers.slice(0, -1).join(", ") + ", and " + numbers.at(-1)?.toString();
+}
+
+const QUALITY_TRIANGLE_SOURCE_ID = "field-atlas-quality-folded-triangles";
+const QUALITY_TRIANGLE_FILL_LAYER_ID = "field-atlas-quality-folded-triangles-fill";
+const QUALITY_TRIANGLE_LINE_LAYER_ID = "field-atlas-quality-folded-triangles-line";
+
 export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: boolean }>) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [history, dispatch] = useReducer(anchorReducer, INITIAL_HISTORY);
@@ -256,6 +276,35 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
   );
   const hoverEstimate = hoverImagePoint ? model.projectImagePoint(hoverImagePoint) : null;
   const pendingEstimate = pendingImagePoint ? model.projectImagePoint(pendingImagePoint) : null;
+  const foldedTriangleWarnings = useMemo(
+    () => model.quality.warnings.filter((warning) => warning.code === "folded-triangle"),
+    [model],
+  );
+  const foldedTriangles = useMemo(
+    () => foldedTriangleWarnings
+      .map((warning, index) => ({
+        warning,
+        index,
+        anchors: warning.anchorIds
+          .map((anchorId) => anchors.find((anchor) => anchor.id === anchorId))
+          .filter((anchor): anchor is AnchorPair => Boolean(anchor)),
+      }))
+      .filter((triangle) => triangle.anchors.length === 3),
+    [anchors, foldedTriangleWarnings],
+  );
+  const foldedAnchorIds = useMemo(
+    () => new Set(foldedTriangles.flatMap((triangle) => triangle.warning.anchorIds)),
+    [foldedTriangles],
+  );
+  const foldedAnchorNumbers = useMemo(
+    () => anchors.reduce<number[]>((numbers, anchor, index) => {
+      if (foldedAnchorIds.has(anchor.id)) {
+        numbers.push(index + 1);
+      }
+      return numbers;
+    }, []),
+    [anchors, foldedAnchorIds],
+  );
   const initialMapMetadata = useMemo<SavedMapMetadata>(() => (
     savedMapMetadata ?? {
       ...EMPTY_MAP_METADATA,
@@ -452,7 +501,10 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
 
       for (let index = 0; index < anchors.length; index += 1) {
         const anchor = anchors[index];
-        const marker = new maplibre.Marker({ element: markerElement("anchor-map-marker", String(index + 1)) })
+        const markerClassName = foldedAnchorIds.has(anchor.id)
+          ? "anchor-map-marker anchor-map-marker--problem"
+          : "anchor-map-marker";
+        const marker = new maplibre.Marker({ element: markerElement(markerClassName, String(index + 1)) })
           .setLngLat([anchor.geographic.longitude, anchor.geographic.latitude])
           .addTo(map);
         markers.push(marker);
@@ -465,7 +517,62 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
         marker.remove();
       }
     };
-  }, [anchors, mapReady]);
+  }, [anchors, foldedAnchorIds, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) {
+      return;
+    }
+
+    const data = {
+      type: "FeatureCollection" as const,
+      features: foldedTriangles.map((triangle) => ({
+        type: "Feature" as const,
+        properties: { triangle: triangle.index + 1 },
+        geometry: {
+          type: "Polygon" as const,
+          coordinates: [[
+            ...triangle.anchors.map((anchor) => [anchor.geographic.longitude, anchor.geographic.latitude]),
+            [triangle.anchors[0].geographic.longitude, triangle.anchors[0].geographic.latitude],
+          ]],
+        },
+      })),
+    };
+
+    map.addSource(QUALITY_TRIANGLE_SOURCE_ID, { type: "geojson", data });
+    map.addLayer({
+      id: QUALITY_TRIANGLE_FILL_LAYER_ID,
+      type: "fill",
+      source: QUALITY_TRIANGLE_SOURCE_ID,
+      paint: {
+        "fill-color": "#e76032",
+        "fill-opacity": 0.2,
+      },
+    });
+    map.addLayer({
+      id: QUALITY_TRIANGLE_LINE_LAYER_ID,
+      type: "line",
+      source: QUALITY_TRIANGLE_SOURCE_ID,
+      paint: {
+        "line-color": "#e76032",
+        "line-width": 3,
+        "line-dasharray": [2, 1],
+      },
+    });
+
+    return () => {
+      if (map.getLayer(QUALITY_TRIANGLE_LINE_LAYER_ID)) {
+        map.removeLayer(QUALITY_TRIANGLE_LINE_LAYER_ID);
+      }
+      if (map.getLayer(QUALITY_TRIANGLE_FILL_LAYER_ID)) {
+        map.removeLayer(QUALITY_TRIANGLE_FILL_LAYER_ID);
+      }
+      if (map.getSource(QUALITY_TRIANGLE_SOURCE_ID)) {
+        map.removeSource(QUALITY_TRIANGLE_SOURCE_ID);
+      }
+    };
+  }, [foldedTriangles, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1140,6 +1247,31 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
                     }}
                   />
                 </div>
+                {foldedTriangles.length > 0 ? (
+                  <svg
+                    className="target-quality-overlay"
+                    viewBox={`0 0 ${targetDisplayDimensions.width} ${targetDisplayDimensions.height}`}
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    {foldedTriangles.map((triangle) => (
+                      <polygon
+                        className="target-quality-triangle"
+                        points={triangle.anchors
+                          .map((anchor) => {
+                            const displayedPoint = imagePointToRotatedPoint(
+                              anchor.image,
+                              imageDimensions,
+                              targetRotation,
+                            );
+                            return displayedPoint.x.toString() + "," + displayedPoint.y.toString();
+                          })
+                          .join(" ")}
+                        key={triangle.warning.anchorIds.join("-")}
+                      />
+                    ))}
+                  </svg>
+                ) : null}
                 {anchors.map((anchor, index) => {
                   const displayedPoint = imagePointToRotatedPoint(
                     anchor.image,
@@ -1148,13 +1280,14 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
                   );
                   return (
                     <button
-                      className="target-anchor-marker"
+                      className={foldedAnchorIds.has(anchor.id) ? "target-anchor-marker target-anchor-marker--problem" : "target-anchor-marker"}
                       type="button"
                       style={{
                         left: ((displayedPoint.x / targetDisplayDimensions.width) * 100).toString() + "%",
                         top: ((displayedPoint.y / targetDisplayDimensions.height) * 100).toString() + "%",
                       }}
                       aria-label={"Delete anchor " + (index + 1).toString()}
+                      title={foldedAnchorIds.has(anchor.id) ? "Part of a folded triangle" : undefined}
                       onClick={(event) => {
                         event.stopPropagation();
                         dispatch({ type: "delete", anchorId: anchor.id });
@@ -1285,8 +1418,15 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
 
           {model.quality.warnings.length > 0 ? (
             <div className="quality-note" data-severity={model.quality.foldedTriangleCount > 0 ? "warning" : "info"}>
-              <strong>{model.quality.warnings[0].message}</strong>
-              <span>{model.quality.foldedTriangleCount > 0 ? "Correct the highlighted area before publishing." : "Spread anchors across the map for better local accuracy."}</span>
+              <strong>{foldedTriangles.length > 0 ? "Folded triangle(s) detected." : model.quality.warnings[0].message}</strong>
+              {foldedTriangles.length > 0 ? (
+                <>
+                  <span>Orange outlines show where the mesh folds. Check anchors {formatAnchorNumbers(foldedAnchorNumbers)}.</span>
+                  <small>{foldedTriangles.length} folded triangle{foldedTriangles.length === 1 ? "" : "s"} involving {foldedAnchorNumbers.length} anchors {foldedTriangles.length === 1 ? "is" : "are"} highlighted.</small>
+                </>
+              ) : (
+                <span>Spread anchors across the map for better local accuracy.</span>
+              )}
             </div>
           ) : (
             <div className="quality-note" data-severity="good">
@@ -1297,7 +1437,7 @@ export function AnchorWorkbench({ startFresh = false }: Readonly<{ startFresh?: 
 
           <ol className="anchor-list">
             {anchors.map((anchor, index) => (
-              <li key={anchor.id}>
+              <li key={anchor.id} data-quality={foldedAnchorIds.has(anchor.id) ? "warning" : undefined}>
                 <span>{index + 1}</span>
                 <div>
                   <strong>{anchor.geographic.latitude.toFixed(5)}, {anchor.geographic.longitude.toFixed(5)}</strong>

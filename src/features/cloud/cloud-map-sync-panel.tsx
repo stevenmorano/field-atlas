@@ -220,7 +220,17 @@ export function CloudMapSyncPanel({ localMaps, onLocalLibraryChanged }: CloudMap
       {sharingMapId ? (() => {
         const map = localMaps.find((candidate) => candidate.id === sharingMapId);
         const remote = cloudMaps.find((candidate) => candidate.id === sharingMapId);
-        return map && remote ? <CommunityPublicationDialog map={map} remote={remote} onClose={() => setSharingMapId(null)} /> : null;
+        return map && remote ? (
+          <CommunityPublicationDialog
+            map={map}
+            remote={remote}
+            onChanged={() => void refreshCloudMaps()}
+            onClose={() => {
+              setSharingMapId(null);
+              void refreshCloudMaps();
+            }}
+          />
+        ) : null;
       })() : null}
     </section>
   );

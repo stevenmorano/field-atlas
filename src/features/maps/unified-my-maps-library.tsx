@@ -13,8 +13,10 @@ import {
   listCloudMaps,
   syncLocalMapToCloud,
 } from "@/features/cloud/cloud-map-service";
-import type { CloudMapSummary } from "@/features/cloud/cloud-map-contract";
+import { cloudMapVisibilityLabel, type CloudMapSummary } from "@/features/cloud/cloud-map-contract";
 import { formatCloudUpdatedAt } from "@/features/cloud/cloud-date";
+import { readAllCloudSyncStates, type LocalCloudSyncState } from "@/features/cloud/local-cloud-sync-store";
+import { isCloudVersionAcknowledged } from "@/features/cloud/cloud-save-guard";
 import { CommunityPublicationDialog } from "@/features/community/community-publication-dialog";
 import {
   deleteSavedMap,
@@ -65,13 +67,10 @@ function formatUpdatedAt(timestamp: number) {
 }
 
 function visibilityLabel(entry: LibraryEntry) {
-  if (entry.kind === "cloud") {
-    if (entry.map.publicationStatus === "published") return "Public";
-    if (entry.map.publicationStatus === "pending_review") return "Pending review";
-    if (entry.map.publicationStatus === "rejected") return "Private";
-  }
-
-  return entry.map.metadata.visibility === "private" ? "Private" : "Ready to share";
+  return cloudMapVisibilityLabel(
+    entry.kind === "cloud" ? entry.map.publicationStatus : entry.remote?.publicationStatus,
+    entry.map.metadata.visibility,
+  );
 }
 
 function entryUpdatedAt(entry: LibraryEntry) {
@@ -101,6 +100,7 @@ export function UnifiedMyMapsLibrary() {
   const [status, setStatus] = useState<LibraryStatus>("loading");
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>(supabase ? "checking" : "unconfigured");
   const [cloudMaps, setCloudMaps] = useState<readonly CloudMapSummary[]>([]);
+  const [cloudSyncStates, setCloudSyncStates] = useState<ReadonlyMap<string, LocalCloudSyncState>>(new Map());
   const [userId, setUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [openingMapId, setOpeningMapId] = useState<string | null>(null);
@@ -116,8 +116,8 @@ export function UnifiedMyMapsLibrary() {
     const createdUrls: string[] = [];
     let createdDraftUrl: string | null = null;
 
-    void Promise.all([listSavedMaps(), readCurrentAnchorDraft()])
-      .then(([savedMaps, currentDraft]) => {
+    void Promise.all([listSavedMaps(), readCurrentAnchorDraft(), readAllCloudSyncStates().catch(() => [])])
+      .then(([savedMaps, currentDraft, syncStates]) => {
         if (cancelled) {
           return;
         }
@@ -134,6 +134,7 @@ export function UnifiedMyMapsLibrary() {
 
         setMaps(savedMaps);
         setDraft(currentDraft);
+        setCloudSyncStates(new Map(syncStates.map((syncState) => [syncState.mapId, syncState])));
         setPreviewUrls(nextPreviewUrls);
         setDraftPreviewUrl(createdDraftUrl);
         setStatus("ready");
@@ -249,17 +250,17 @@ export function UnifiedMyMapsLibrary() {
     }
   }
 
-  async function saveToCloud(map: LocalSavedMap) {
+  async function saveToCloud(map: LocalSavedMap): Promise<boolean> {
     if (!userId) {
       setLibraryMessage("Sign in to back up this map to your account.");
-      return;
+      return false;
     }
 
     const now = currentTimestamp();
     const lastSavedAt = lastCloudSaveAtRef.current.get(map.id) ?? 0;
     if (now - lastSavedAt < 30_000) {
       setLibraryMessage("This map was just backed up. Please wait a moment before saving again.");
-      return;
+      return false;
     }
 
     setBusyMapId(map.id);
@@ -270,11 +271,17 @@ export function UnifiedMyMapsLibrary() {
       setLibraryMessage(result.status === "conflict"
         ? `${map.metadata.title} was saved as a separate cloud revision because another device changed it first.`
         : result.status === "unchanged"
-          ? `${map.metadata.title} is already backed up.`
+          ? `${map.metadata.title} is already up to date in the cloud. No new backup was needed.`
           : `${map.metadata.title} is backed up to your account.`);
+      const syncStates = await readAllCloudSyncStates().catch(() => null);
+      if (syncStates) {
+        setCloudSyncStates(new Map(syncStates.map((syncState) => [syncState.mapId, syncState])));
+      }
       await refreshCloudMaps();
+      return result.status !== "conflict";
     } catch (error) {
       setLibraryMessage(error instanceof Error ? error.message : "This map could not be backed up.");
+      return false;
     } finally {
       setBusyMapId(null);
     }
@@ -322,6 +329,18 @@ export function UnifiedMyMapsLibrary() {
 
   const sharingEntry = sharingMapId
     ? entries.find((entry): entry is LocalEntry => entry.kind === "local" && entry.map.id === sharingMapId)
+    : undefined;
+  const sharingMapCloudIsCurrent = sharingEntry?.remote
+    ? (() => {
+      const localMap = sharingEntry.map;
+      const remote = sharingEntry.remote;
+      const syncState = cloudSyncStates.get(localMap.id);
+      const acknowledged = isCloudVersionAcknowledged(syncState, userId, remote.currentRevisionId, localMap.updatedAt);
+      const cloudHasMoreAnchors = remote.anchorCount > localMap.anchors.length;
+      const hasUnsyncedChanges = localMap.updatedAt > remote.clientUpdatedAt && !cloudHasMoreAnchors && !acknowledged;
+      const hasCloudUpdates = remote.clientUpdatedAt > localMap.updatedAt || cloudHasMoreAnchors;
+      return !hasUnsyncedChanges && !hasCloudUpdates;
+    })()
     : undefined;
 
   if (status === "loading") {
@@ -443,9 +462,13 @@ export function UnifiedMyMapsLibrary() {
               const cloudMap = entry.kind === "cloud" ? entry.map : null;
               const remote = entry.kind === "local" ? entry.remote : null;
               const isBusy = busyMapId === map.id;
+              const syncState = localMap ? cloudSyncStates.get(localMap.id) : null;
+              const hasAcknowledgedLocalVersion = localMap && remote
+                ? isCloudVersionAcknowledged(syncState, userId, remote.currentRevisionId, localMap.updatedAt)
+                : false;
               const cloudHasMoreAnchors = localMap && remote ? remote.anchorCount > localMap.anchors.length : false;
               const hasUnsyncedChanges = localMap && remote
-                ? localMap.updatedAt > remote.clientUpdatedAt && !cloudHasMoreAnchors
+                ? localMap.updatedAt > remote.clientUpdatedAt && !cloudHasMoreAnchors && !hasAcknowledgedLocalVersion
                 : false;
               const hasCloudUpdates = localMap && remote
                 ? remote.clientUpdatedAt > localMap.updatedAt || cloudHasMoreAnchors
@@ -541,7 +564,17 @@ export function UnifiedMyMapsLibrary() {
       </aside>
 
       {sharingEntry?.remote ? (
-        <CommunityPublicationDialog map={sharingEntry.map} remote={sharingEntry.remote} onClose={() => setSharingMapId(null)} />
+        <CommunityPublicationDialog
+          map={sharingEntry.map}
+          remote={sharingEntry.remote}
+          cloudIsCurrent={sharingMapCloudIsCurrent}
+          onSync={() => saveToCloud(sharingEntry.map)}
+          onChanged={() => void refreshCloudMaps()}
+          onClose={() => {
+            setSharingMapId(null);
+            void refreshCloudMaps();
+          }}
+        />
       ) : null}
     </main>
   );

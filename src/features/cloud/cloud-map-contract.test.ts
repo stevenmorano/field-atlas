@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createCloudContentFingerprint,
+  cloudMapVisibilityLabel,
   normalizeCloudImageMimeType,
   parseCloudAssetUploadRequest,
   parseCloudMapSyncRequest,
@@ -39,6 +40,13 @@ const MAP: LocalSavedMap = {
 };
 
 describe("cloud map contract", () => {
+  it("shows the account publication state on local map cards", () => {
+    expect(cloudMapVisibilityLabel("published", "public-ready")).toBe("Public");
+    expect(cloudMapVisibilityLabel("pending_review", "public-ready")).toBe("Pending review");
+    expect(cloudMapVisibilityLabel(null, "public-ready")).toBe("Ready to share");
+    expect(cloudMapVisibilityLabel("private", "private")).toBe("Private");
+  });
+
   it("normalizes missing browser MIME values from the file extension", () => {
     expect(normalizeCloudImageMimeType("scan.JPEG", "")).toBe("image/jpeg");
   });
