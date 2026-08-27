@@ -51,10 +51,10 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 | Method and path | Access | Input | Result |
 | --- | --- | --- | --- |
 | `GET /api/community/maps/[mapId]/status` | Signed-in owner | Path map ID | Current synced/published revision, moderation hold, and frozen sharing settings. |
-| `POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication, including an explicit update of an older public snapshot. The prior publication remains immutable history. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. |
+|`POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication, including an explicit update of an older public snapshot. The prior publication remains immutable history. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. Sources up to 200 megapixels are decoded within a bounded limit; the high-quality shared WebP is capped at 6,000 pixels on the long edge and keeps the private original unchanged. Reduced derivatives use scaled public anchor coordinates. |
 | `POST /api/community/maps/[mapId]/unpublish` | Signed-in owner | Expected current publication ID | Ends anonymous access without deleting local/private work. |
 
-Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images.
+Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images. Environments publishing a reduced large map must apply `supabase/migrations/202608260001_reduce_public_map_images.sql`; without it, the server returns a migration-specific error and preserves the private map.
 
 ## Reports and moderation
 
@@ -70,6 +70,7 @@ Publication requires at least two anchors and the latest synced revision. Idempo
 - `src/features/community/community-contract.ts`: publication, report, public-map, profile, and unchanged-publication contracts.
 - `src/lib/cloud/cloud-api.ts`: shared authentication and error mapping.
 - `src/lib/community/community-server.ts`: publishing, sanitized image creation, idempotency, deduplication, and anonymous report tokens.
+- `src/lib/community/public-image-policy.ts`: public derivative dimensions and image-coordinate scaling policy.
 - `src/lib/community/community-data.ts`: allowlisted public list/detail mapping.
 
 ## Security invariants

@@ -22,6 +22,7 @@ The current build is a local-first functional beta with account-gated creator to
 - Sign in with email/password before creator work and explicitly checkpoint private, revisioned Supabase and Cloudflare R2 storage.
 - List account maps on another device and download a verified original image plus its metadata and anchors into that browser.
 - Publish an explicitly selected synced revision as Public or tokenized Unlisted without waiting for preapproval.
+- Automatically prepare a high-quality, mobile-safer public copy for very large scans while keeping the private original unchanged.
 - Recognize an already-published revision and avoid duplicate publication records or duplicate public image processing.
 - Keep private originals private while serving sanitized high-quality and thumbnail WebP copies.
 - Browse real public maps in Discover, open them with GPS without an account, save them on the current device for offline use, and report problems anonymously.

@@ -1,7 +1,7 @@
 # Operations and release runbook
 
 Status: small-development-beta runbook
-Last reviewed: 2026-08-15
+Last reviewed: 2026-08-26
 
 This runbook protects user work and the private/public boundary while Field Atlas moves from localhost to a hosted beta.
 
@@ -32,6 +32,7 @@ Then smoke-test:
 5. A legitimate visibility change becomes publishable, but cancel it unless the change is intended.
 6. A fresh signed-out origin can open a Public map even when no private cloud session is present, then use the GPS control, choose **Save on this device**, open the profile, and submit a test report.
 7. Browser console logs contain no application errors.
+8. For a large-map publication, confirm the shared copy is reduced to at most 6,000 pixels on its long edge, GPS/Compare anchor placement remains aligned, and the original private asset is unchanged.
 
 ## Moderation verification
 
@@ -60,6 +61,8 @@ Do not describe **Admin checked** as proof of accuracy, ownership, legality, or 
 8. Test private sync/download with a small nonessential map before using a high-resolution original.
 9. Test Public and Unlisted access from a signed-out browser.
 10. Test foreground geolocation on a physical phone over HTTPS.
+
+Before deploying the large-map publishing change, apply 202608260001_reduce_public_map_images.sql after the earlier migrations. It is additive and does not rewrite publications, private revisions, original R2 objects, or IndexedDB maps.
 
 Localhost IndexedDB maps do not automatically appear under the production hostname. Export/import or explicit cloud download is required because browser origins have separate storage.
 

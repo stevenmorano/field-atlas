@@ -1,7 +1,7 @@
 # Implementation plan
 
-Status: creator account gate and unified My Maps slice active locally; database hardening and beta release verification next
-Last updated: 2026-08-15
+Status: creator account gate, unified My Maps, and bounded public derivatives active locally; database migration and beta release verification next
+Last updated: 2026-08-26
 
 ## Delivery strategy
 
@@ -33,6 +33,7 @@ The next steps prioritize plain-language public workflows, reliable map interact
 - [x] Direct, signed Cloudflare R2 original-image upload/download with verification.
 - [x] Explicit local-to-cloud checkpoints, immutable revisions, stale-device conflict preservation, and cloud-to-device download.
 - [x] Explicit Public/Unlisted publication with sanitized WebP derivatives and private originals.
+- [x] Large source scans are decoded within a bounded 200-megapixel limit and reduced only for the public copy to a 6,000-pixel long edge, with scaled public anchors; the additive Supabase migration remains to be applied before large-map publication in each environment.
 - [x] Anonymous Discover, map viewing, foreground GPS, offline save, profiles, and problem reports.
 - [x] Post-publication administrator queue with check, changes-requested, hide, and restore actions.
 - [x] Exact duplicate-publication protection before R2 processing.

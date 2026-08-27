@@ -88,6 +88,8 @@ Community sharing appears after the operator applies all migrations in [`CLOUD_S
 5. Confirm that other people can open the separate shared copy immediately. The unchanged original remains private.
 6. Use the returned link or open the public map. **Make private** stops future access without removing local/private-cloud work; it cannot recall a copy someone already downloaded.
 
+For a very large scan, Field Atlas keeps the original private and automatically prepares a smaller high-quality shared copy, up to 6,000 pixels on the long edge. No re-upload or manual reduction is needed, and the anchors are adjusted for the shared copy so GPS and Compare stay aligned. If the source exceeds the bounded processing limit, the Share dialog explains that a smaller source is required; your private map is preserved.
+
 Public visitors do not need an account to open the map, use foreground GPS, save it on this device for offline use, visit the uploader profile, or report a problem. A device save is browser-local; it is not an account favorite. Public maps enter the administrator's post-publication queue but do not wait there before becoming usable.
 
 After publishing, the My Maps card refreshes to **Public** (or **Pending review**) when the account copy is checked. If a card still says **Ready to share**, open **Share** to see the authoritative owner status; a publication that did not finish will still offer **Publish publicly now**. If a completed Public map is not visible in Discover, use **Refresh maps** there; the catalog is intentionally fetched fresh.

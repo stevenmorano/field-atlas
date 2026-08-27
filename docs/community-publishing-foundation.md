@@ -1,7 +1,7 @@
 # Community publishing foundation
 
 Status: core small-beta implementation is active in the configured development environment; fresh environments require the documented migrations and administrator seed
-Last reviewed: 2026-08-14
+Last reviewed: 2026-08-26
 
 ## Current implementation boundary
 
@@ -99,7 +99,7 @@ The unchanged uploaded original remains private in R2. Publication creates or re
 
 Direct browser uploads land under a unique quarantine key and can never become a public asset in place. A trusted server process streams the quarantine object, verifies its content hash, magic bytes, decoded dimensions/pixel count, and successful decode, then writes sanitized derivatives to new content-addressed finalized keys. Published keys are immutable and non-overwritable through client credentials. Failed or expired quarantine objects are never referenced by an effective publication.
 
-The public derivative supports the beta's safe raster formats and enforces decoded pixel and output-size limits. SVG, PDF, HEIC, and other preparation formats remain private inputs until a separate trusted conversion pipeline exists. Public asset downloads use short-lived, publication-authorized URLs with rate limits and attachment-safe headers.
+The public derivative supports the beta's safe raster formats and enforces a bounded 200-megapixel input limit plus a 6,000-pixel long-edge output cap for the high-quality copy. Quality remains high (WebP quality 92), and smaller sources are not enlarged. When a source is reduced, the publication stores scaled image-space anchors so GPS and Compare use the public image coordinate space; the private original and revision remain unchanged. Migration `202608260001_reduce_public_map_images.sql` adds this behavior without rewriting existing publications.
 
 ### Anonymous reporting
 

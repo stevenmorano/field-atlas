@@ -1,7 +1,7 @@
 # Cloud setup guide
 
-Status: cloud/community foundation applied successfully; migration `202608120001` from the moderation hardening pass still needs to be applied to the current development database
-Last reviewed: 2026-08-14
+Status: cloud/community foundation applied successfully; migrations `202608120001` and `202608260001` still need to be applied wherever those hardening and large-map publishing changes are not yet installed
+Last reviewed: 2026-08-26
 
 The repository contains account-gated creator tools, private checkpointing, and R2 transfer code. Without these environment values, anonymous viewing remains available while creator routes show setup guidance instead of allowing an upload.
 
@@ -12,10 +12,11 @@ The repository contains account-gated creator tools, private checkpointing, and 
 3. Run [`../supabase/migrations/202608110001_community_publishing_foundation.sql`](../supabase/migrations/202608110001_community_publishing_foundation.sql) after the first migration. It is additive and does not delete existing private maps or revisions.
 4. Run [`../supabase/migrations/202608110002_fix_publish_publication_number.sql`](../supabase/migrations/202608110002_fix_publish_publication_number.sql). It fixes the `publication_number` name collision found during the first live publication test and is safe after migration `202608110001`.
 5. Run [`../supabase/migrations/202608120001_enforce_moderation_hold_on_unpublish.sql`](../supabase/migrations/202608120001_enforce_moderation_hold_on_unpublish.sql). It makes the map-level moderation hold authoritative for owner unpublishing as well as publishing and does not rewrite existing records.
-6. In Authentication URL settings, set the Site URL to the deployed Field Atlas origin. Use `http://localhost:3000` only as the temporary Site URL when testing exclusively on that origin.
-7. Add both `http://localhost:3000/auth/callback` and `https://YOUR-PRODUCTION-ORIGIN/auth/callback` to Redirect URLs. Do not replace the localhost entry when adding production; both may coexist.
-8. Keep the Email provider enabled for email/password accounts. The current UI does not require Google OAuth.
-9. Copy the base project URL (ending in `.supabase.co`, without `/rest/v1/`) and publishable key. A value ending in `/rest/v1/` is an API path, not the project base URL, and causes authentication requests to fail.
+6. Run the migration 202608260001_reduce_public_map_images.sql after the moderation-hold migration. It adds only the public-derivative anchor field, keeps existing publications unchanged, and adds the v2 publish/read functions needed when a source is reduced.
+7. In Authentication URL settings, set the Site URL to the deployed Field Atlas origin. Use `http://localhost:3000` only as the temporary Site URL when testing exclusively on that origin.
+8. Add both `http://localhost:3000/auth/callback` and `https://YOUR-PRODUCTION-ORIGIN/auth/callback` to Redirect URLs. Do not replace the localhost entry when adding production; both may coexist.
+9. Keep the Email provider enabled for email/password accounts. The current UI does not require Google OAuth.
+10. Copy the base project URL (ending in `.supabase.co`, without `/rest/v1/`) and publishable key. A value ending in `/rest/v1/` is an API path, not the project base URL, and causes authentication requests to fail.
 
 The migration creates private-by-default maps, immutable revisions, image asset records, row-level security, and narrowly granted sync functions. Authenticated clients cannot directly mark a map published.
 
@@ -109,9 +110,9 @@ Sign out and back in, then open Account. The **Open moderation** button appears 
 | Email link is expired or already used | Old one-time link | Request a new link, or use the implemented email/password flow. |
 | R2 CORS editor says the policy is invalid | Missing comma/bracket or origins were pasted as adjacent strings | Start from `r2-cors.example.json`; keep valid JSON and one string per origin. |
 | Publication reports ambiguous `publication_number` | Hotfix migration not applied | Run `202608110002_fix_publish_publication_number.sql`. |
-| Share says the migration is missing | Community migration or grants not applied to the selected Supabase project | Verify migrations `202608100001`, `202608110001`, `202608110002`, and `202608120001` in order. |
+|`Share says the migration is missing` | Community migration or grants not applied to the selected Supabase project | Verify migrations `202608100001`, `202608110001`, `202608110002`, `202608120001`, and `202608260001` in order. |
 | The app starts on port 3001 | Another process already owns 3000 | Stop the older Node process/project, then restart Field Atlas on 3000. |
 
 ## Public upload boundary
 
-Private sync and public sharing remain separate. Publishing freezes the chosen revision, decodes and re-encodes the source as sanitized WebP derivatives, keeps the original R2 object private, and atomically activates the new publication. Public data is returned through allowlisted database functions and application APIs; anonymous users cannot select raw map revisions or private assets. A public map is visible immediately and enters post-publication review. An unlisted map requires its revocable secret link.
+Private sync and public sharing remain separate. Publishing freezes the chosen revision, decodes and re-encodes the source as sanitized WebP derivatives, keeps the original R2 object private, and atomically activates the new publication. The server accepts sources within a bounded 200-megapixel decode limit and caps the high-quality public copy at 6,000 pixels on the long edge; the private original is never resized or overwritten. Reduced copies use scaled public anchors. Apply 202608260001_reduce_public_map_images.sql before publishing a reduced large map. Public data is returned through allowlisted database functions and application APIs; anonymous users cannot select raw map revisions or private assets. A public map is visible immediately and enters post-publication review. An unlisted map requires its revocable secret link.

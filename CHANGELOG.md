@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-26 - Safe public derivatives for large scans
+
+- Public publishing now accepts source images within a bounded 200-megapixel decode limit and automatically creates a high-quality WebP derivative capped at 6,000 pixels on the long edge.
+- The original image remains unchanged and private; smaller maps continue to publish at their original dimensions.
+- When a public derivative is reduced, its image-space anchor coordinates are scaled with it so GPS and Compare remain aligned.
+- Oversized sources now receive a specific size-limit message instead of the misleading unsupported-format error.
+
 ## 2026-08-15 - Anchor Lab mesh diagnostics
 
 - Folded-mesh warnings now identify the exact anchor numbers involved.

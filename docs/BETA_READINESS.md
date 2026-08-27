@@ -1,7 +1,7 @@
 # Beta readiness
 
 Status: beta backlog captured; the current production deployment is not yet the public beta release candidate
-Last reviewed: 2026-08-15
+Last reviewed: 2026-08-26
 
 This document is the working release checklist for people who did not build Field Atlas. It records the usability problems, workflow gaps, and product decisions that must be clear before inviting a broader group of testers.
 
@@ -25,6 +25,7 @@ Status key: `[x]` implemented and locally validated · `[ ]` still needs impleme
 - [x] Reduced-zoom uploaded maps are centered below the floating controls, and native image dragging is disabled while pointer capture handles panning. Lost pointer capture also clears the active drag state.
 - [x] Hovering either Anchor Lab pane previews the corresponding point in the other pane with a red guide marker.
 - [x] Folded-mesh warnings identify the exact anchor numbers, distinguish folded-triangle count from unique involved-anchor count, and outline each affected triangle in both panes; the matching markers and correction-history rows are highlighted.
+- [x] Public sharing automatically prepares a bounded high-quality derivative for large scans, preserves the private original, and scales public anchor coordinates with the derivative.
 - [ ] Add touch pinch-to-zoom to the uploaded-map pane and verify it at normal and maximum zoom.
 - [ ] Verify pointer, touch, trackpad, wheel zoom, and 3,200% zoom behavior without changing anchor coordinates or existing browser maps.
 
@@ -115,3 +116,4 @@ Before calling the beta release candidate ready:
 4. [ ] Exercise signed-in sync, changed-revision publication, profile display, and moderation access.
 5. [ ] Confirm the Vercel deployment uses the intended Supabase/R2 environment values and callback origins.
 6. [ ] Confirm existing IndexedDB maps, cloud revisions, publications, and R2 objects are preserved; no reset, destructive migration, or broad cleanup is part of this release.
+7. [ ] Apply 202608260001_reduce_public_map_images.sql in the release environment, then publish and open one large-map test copy from a signed-out browser.

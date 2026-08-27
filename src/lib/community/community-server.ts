@@ -12,6 +12,12 @@ import {
 } from "@/features/community/community-contract";
 import { CloudApiError, firstRpcRow } from "@/lib/cloud/cloud-api";
 import { deleteR2Object, readR2Object, writeR2Object } from "@/lib/cloud/r2";
+import type { AnchorPair } from "@/lib/georeferencing/types";
+import {
+  MAX_PUBLIC_IMAGE_INPUT_PIXELS,
+  publicImageDimensions,
+  scalePublicAnchors,
+} from "@/lib/community/public-image-policy";
 
 type MapRow = Readonly<{
   id: string;
@@ -34,6 +40,8 @@ type AssetRow = Readonly<{
   object_key: string;
   status: string;
   sha256: string;
+  width: number;
+  height: number;
 }>;
 
 type PublicationRetryRow = Readonly<{
@@ -105,10 +113,11 @@ function coverageFromAnchors(value: unknown) {
   };
 }
 
-async function makePublicImages(source: Uint8Array) {
+async function makePublicImages(source: Uint8Array, sourceDimensions: Readonly<{ width: number; height: number }>) {
+  const plannedDimensions = publicImageDimensions(sourceDimensions.width, sourceDimensions.height);
   const image = sharp(source, {
     failOn: "error",
-    limitInputPixels: 120_000_000,
+    limitInputPixels: MAX_PUBLIC_IMAGE_INPUT_PIXELS,
     sequentialRead: true,
   }).rotate();
   const metadata = await image.metadata();
@@ -118,7 +127,7 @@ async function makePublicImages(source: Uint8Array) {
 
   const highQuality = await image
     .clone()
-    .resize({ width: 12_000, height: 12_000, fit: "inside", withoutEnlargement: true })
+    .resize({ width: plannedDimensions.width, height: plannedDimensions.height, fit: "inside", withoutEnlargement: true })
     .webp({ quality: 92, effort: 4, smartSubsample: true })
     .toBuffer({ resolveWithObject: true });
   const thumbnail = await image
@@ -132,6 +141,8 @@ async function makePublicImages(source: Uint8Array) {
     thumbnail,
     width: highQuality.info.width,
     height: highQuality.info.height,
+    wasReduced: highQuality.info.width !== sourceDimensions.width
+      || highQuality.info.height !== sourceDimensions.height,
     sha256: sha256(highQuality.data),
   };
 }
@@ -299,7 +310,7 @@ export async function publishOwnerMap(
 
   const { data: rawAsset, error: assetError } = await supabase
     .from("map_assets")
-    .select("id, object_key, status, sha256")
+    .select("id, object_key, status, sha256, width, height")
     .eq("id", revision.asset_id)
     .eq("owner_id", ownerId)
     .eq("status", "ready")
@@ -320,14 +331,18 @@ export async function publishOwnerMap(
     if (sha256(source) !== asset.sha256) {
       throw new CloudApiError("The private source image failed its checksum verification.", 409);
     }
-    const images = await makePublicImages(source);
+    const images = await makePublicImages(source, asset);
     imagesWritten = true;
     await Promise.all([
       writeR2Object(mapObjectKey, images.highQuality, "image/webp"),
       writeR2Object(thumbnailObjectKey, images.thumbnail, "image/webp"),
     ]);
     const coverage = coverageFromAnchors(revision.anchors);
-    const { data, error } = await supabase.rpc("publish_map_revision", {
+    const publicAnchors = images.wasReduced
+      ? scalePublicAnchors(revision.anchors as readonly AnchorPair[], asset, images)
+      : null;
+    const rpcName = images.wasReduced ? "publish_map_revision_v2" : "publish_map_revision";
+    const { data, error } = await supabase.rpc(rpcName, {
       p_map_id: mapId,
       p_revision_id: revision.id,
       p_public_asset_id: publicAssetId,
@@ -339,6 +354,7 @@ export async function publishOwnerMap(
       p_sha256: images.sha256,
       p_width: images.width,
       p_height: images.height,
+      ...(publicAnchors ? { p_public_anchors: publicAnchors } : {}),
       p_visibility: input.visibility,
       p_rights_basis: input.rightsBasis,
       p_source_url: input.sourceUrl,
@@ -352,6 +368,9 @@ export async function publishOwnerMap(
       p_expected_publication_id: input.expectedPublicationId,
     });
     if (error) {
+      if (images.wasReduced && /publish_map_revision_v2|schema cache|does not exist/i.test(error.message || "")) {
+        throw new CloudApiError("Large-map publishing needs the latest database migration before it can be shared.", 503);
+      }
       const recovered = await readMatchingPublicationRetry(supabase, ownerId, mapId, revision.id, effectiveSourceUrl, input);
       if (recovered) {
         await Promise.allSettled([deleteR2Object(mapObjectKey), deleteR2Object(thumbnailObjectKey)]);
@@ -391,6 +410,12 @@ export async function publishOwnerMap(
       await Promise.allSettled([deleteR2Object(mapObjectKey), deleteR2Object(thumbnailObjectKey)]);
     }
     if (error instanceof CloudApiError) throw error;
+    if (error instanceof Error && /too large to publish|pixel limit|too many pixels/i.test(error.message)) {
+      throw new CloudApiError(
+        "This image is too large to publish. Try a smaller copy or reduce its dimensions, then try again.",
+        422,
+      );
+    }
     throw new CloudApiError("The public image could not be decoded. Try a JPEG, PNG, or WebP image.", 422);
   }
 }
