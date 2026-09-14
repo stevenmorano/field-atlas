@@ -7,6 +7,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import type { PublicMapSummary } from "@/features/community/community-contract";
 import { distanceBetweenMeters, formatDistance } from "@/features/discover/geo-distance";
+import { publicMapHref } from "@/features/viewer/map-links";
 import type { GeographicPoint } from "@/lib/georeferencing/types";
 
 type LocationState =
@@ -53,6 +54,13 @@ function publicDateLabel(map: PublicMapSummary) {
   return "Date unknown";
 }
 
+function publicImageSize(map: PublicMapSummary) {
+  if (map.imageDimensions.width <= 0 || map.imageDimensions.height <= 0) {
+    return "Unavailable";
+  }
+  return `${map.imageDimensions.width.toLocaleString()} × ${map.imageDimensions.height.toLocaleString()}`;
+}
+
 function publicSubjectMatches(map: PublicMapSummary, subject: SubjectFilter) {
   if (subject === "all") return true;
   const normalized = map.subject.toLocaleLowerCase();
@@ -66,7 +74,7 @@ function PublicCatalogCard({ entry }: Readonly<{ entry: PublicMapWithDistance }>
   const { map } = entry;
   return (
     <article className="catalog-card catalog-card--public">
-      <Link className="public-map-thumbnail" href={`/maps/${map.mapId}` as Route} aria-label={`Open ${map.title}`}>
+      <Link className="public-map-thumbnail" href={publicMapHref(map.mapId) as Route} aria-label={`Open ${map.title}`}>
         <Image
           src={`/api/community/assets/${map.publicAssetId}?variant=thumbnail`}
           alt=""
@@ -83,16 +91,17 @@ function PublicCatalogCard({ entry }: Readonly<{ entry: PublicMapWithDistance }>
         </div>
         <div>
           <p className="catalog-card__place">{map.placeName || map.subject}</p>
-          <h3><Link href={`/maps/${map.mapId}` as Route}>{map.title}</Link></h3>
+          <h3><Link href={publicMapHref(map.mapId) as Route}>{map.title}</Link></h3>
         </div>
-        <dl className="catalog-card__facts">
+        <dl className="catalog-card__facts catalog-card__facts--public">
           <div><dt>Map</dt><dd>{publicDateLabel(map)}</dd></div>
           <div><dt>Anchors</dt><dd>{map.anchorCount}</dd></div>
+          <div><dt>Image</dt><dd>{publicImageSize(map)}</dd></div>
           <div><dt>By</dt><dd><Link href={`/profiles/${map.username}` as Route}>{map.username}</Link></dd></div>
         </dl>
         <div className="catalog-card__footer">
           <span>{entry.isCoveringLocation ? "Covers your position" : entry.coverageDistanceMeters === null ? map.visualStyle : `${formatDistance(entry.coverageDistanceMeters)} away`}</span>
-          <Link className="text-button" href={`/maps/${map.mapId}` as Route}>Open map <span aria-hidden="true">→</span></Link>
+          <Link className="text-button" href={publicMapHref(map.mapId) as Route}>Open map <span aria-hidden="true">→</span></Link>
         </div>
       </div>
     </article>

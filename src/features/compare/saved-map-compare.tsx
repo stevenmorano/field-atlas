@@ -23,6 +23,7 @@ import type { LocalSavedMap } from "@/features/maps/saved-map-types";
 import { createGeoreferenceModel } from "@/lib/georeferencing/create-georeference-model";
 import type { PublicMapDetail } from "@/features/community/community-contract";
 import { createLocalMapFromPublicDetail } from "@/features/community/public-map-local";
+import { publicMapHref } from "@/features/viewer/map-links";
 
 type CompareLoadStatus = "loading" | "ready" | "missing" | "error";
 
@@ -68,6 +69,8 @@ function applyBasemapMode(map: MapLibreMap, mode: DemoBasemapMode) {
 export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("share") ?? "";
+  const publicViewRequested = searchParams.get("public") === "1" || Boolean(shareToken);
+  const mapViewHref = publicViewRequested ? publicMapHref(mapId, shareToken) : `/maps/${mapId}`;
   const [savedMap, setSavedMap] = useState<LocalSavedMap | null>(null);
   const [imageSource, setImageSource] = useState<string | null>(null);
   const [overlayImage, setOverlayImage] = useState<HTMLImageElement | null>(null);
@@ -89,27 +92,29 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
 
     void (async () => {
       try {
-        const map = await readSavedMap(mapId);
-        if (cancelled) {
-          return;
-        }
-        if (map) {
-          objectUrl = URL.createObjectURL(map.imageBlob);
-          setSavedMap(map);
-          setBasemapMode(map.basemapMode);
-          setImageSource(objectUrl);
-          setLoadStatus("ready");
-          return;
-        }
+        if (!publicViewRequested) {
+          const map = await readSavedMap(mapId);
+          if (cancelled) {
+            return;
+          }
+          if (map) {
+            objectUrl = URL.createObjectURL(map.imageBlob);
+            setSavedMap(map);
+            setBasemapMode(map.basemapMode);
+            setImageSource(objectUrl);
+            setLoadStatus("ready");
+            return;
+          }
 
-        const cloudResult = await loadCloudMapForViewing(mapId);
-        if (cloudResult) {
-          objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
-          setSavedMap(cloudResult.map);
-          setBasemapMode(cloudResult.map.basemapMode);
-          setImageSource(objectUrl);
-          setLoadStatus("ready");
-          return;
+          const cloudResult = await loadCloudMapForViewing(mapId);
+          if (cloudResult) {
+            objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
+            setSavedMap(cloudResult.map);
+            setBasemapMode(cloudResult.map.basemapMode);
+            setImageSource(objectUrl);
+            setLoadStatus("ready");
+            return;
+          }
         }
 
         const shareQuery = shareToken ? `?share=${encodeURIComponent(shareToken)}` : "";
@@ -143,7 +148,7 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [mapId, shareToken]);
+  }, [mapId, publicViewRequested, shareToken]);
 
   useEffect(() => {
     if (!imageSource) {
@@ -356,7 +361,7 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
           </Link>
           <Link
             className="button button--signal"
-            href={shareToken ? `/maps/${savedMap.id}?share=${encodeURIComponent(shareToken)}` : `/maps/${savedMap.id}` as Route}
+            href={mapViewHref as Route}
           >
             Open map
           </Link>
@@ -370,7 +375,7 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
       <section className="compare-shell" aria-label={`${savedMap.metadata.title} comparison`}>
         <header className="compare-header">
           <div className="compare-header__identity">
-            <Link href={shareToken ? `/maps/${mapId}?share=${encodeURIComponent(shareToken)}` : `/maps/${mapId}`} aria-label="Back to map">←</Link>
+            <Link href={mapViewHref as Route} aria-label="Back to map">←</Link>
             <div>
               <p>{savedMap.metadata.placeName || "Saved map"}</p>
               <h1>{savedMap.metadata.title}</h1>
@@ -380,7 +385,7 @@ export function SavedMapCompare({ mapId }: Readonly<{ mapId: string }>) {
             <span>{savedMap.anchors.length} anchors · {model?.mode}</span>
             <Link
               className="button button--quiet"
-              href={shareToken ? `/maps/${savedMap.id}?share=${encodeURIComponent(shareToken)}` : `/maps/${savedMap.id}` as Route}
+              href={mapViewHref as Route}
             >
               GPS map
             </Link>

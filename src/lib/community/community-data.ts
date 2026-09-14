@@ -13,7 +13,7 @@ export async function listPublicMapData(
   supabase: SupabaseClient,
   options: Readonly<{ query: string; subject: string | null; before: string | null }>,
 ) {
-  const { data, error } = await supabase.rpc("list_public_maps", {
+  const { data, error } = await supabase.rpc("list_public_maps_v2", {
     p_query: options.query,
     p_subject: options.subject,
     p_limit: 24,
@@ -39,6 +39,10 @@ export async function listPublicMapData(
       publishedAt: String(item.published_at ?? ""),
       username: String(item.username ?? ""),
       adminChecked: item.admin_checked === true,
+      imageDimensions: {
+        width: Number(item.image_width ?? 0),
+        height: Number(item.image_height ?? 0),
+      },
       coverage: {
         latitude: nullableNumber(item.coverage_center_lat),
         longitude: nullableNumber(item.coverage_center_lng),

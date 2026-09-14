@@ -115,6 +115,7 @@ export type PublicMapSummary = Readonly<{
   publishedAt: string;
   username: string;
   adminChecked: boolean;
+  imageDimensions: Readonly<{ width: number; height: number }>;
   coverage: Readonly<{
     latitude: number | null;
     longitude: number | null;
@@ -122,7 +123,7 @@ export type PublicMapSummary = Readonly<{
   }>;
 }>;
 
-export type PublicMapDetail = PublicMapSummary & Readonly<{
+export type PublicMapDetail = Omit<PublicMapSummary, "imageDimensions"> & Readonly<{
   schemaVersion: 1;
   visibility: PublicationVisibility;
   moderationStatus: "needs_review" | "admin_checked" | "changes_requested";

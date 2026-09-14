@@ -12,4 +12,8 @@ describe("map links", () => {
   it("opens listed maps without a share query", () => {
     expect(compareMapHref("map-123")).toBe("/maps/map-123/compare");
   });
+
+  it("keeps a listed map in public view when opening Compare", () => {
+    expect(compareMapHref("map-123", null, true)).toBe("/maps/map-123/compare?public=1");
+  });
 });

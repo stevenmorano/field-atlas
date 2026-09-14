@@ -1,7 +1,7 @@
 # Application API reference
 
 Status: implemented browser-application API
-Last reviewed: 2026-08-15
+Last reviewed: 2026-08-28
 
 These Next.js App Router handlers support the Field Atlas web application. They are not yet a versioned third-party API. Request and response contracts may evolve with the beta.
 
@@ -11,7 +11,7 @@ These Next.js App Router handlers support the Field Atlas web application. They 
 - Authenticated routes verify the Supabase cookie session server-side.
 - Owner access is additionally constrained by Postgres row-level security and narrow database functions.
 - Public and Unlisted reads return allowlisted publication DTOs rather than raw tables.
-- Public map viewers may probe the private cloud detail route first for an owner copy; any non-success response is treated as unavailable and does not prevent the public detail route from serving an authorized publication.
+- Public map viewers may probe the private cloud detail route first for an owner copy only when no explicit public-view request is present; `?public=1` and Unlisted `?share=...` always load the authorized frozen publication copy, even for a signed-in owner.
 - Anchor Lab mesh warnings and triangle highlights are computed in the browser from the current anchor pairs; they do not add an API request, cloud record, or publication revision.
 - Unlisted `share` query values are bearer secrets. Never log, persist in analytics, or include them in public referrers.
 - Publication detail and authorized asset redirects use `private, no-store` so a hide or hold is checked on every request. Discover summaries remain independently reloadable.
@@ -39,7 +39,7 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 
 | Method and path | Access | Input | Result/cache |
 | --- | --- | --- | --- |
-| `GET /api/community/maps?q=&subject=&before=` | Anonymous | Bounded search, optional subject, optional cursor | Up to 24 effective Public summaries. The response is `Cache-Control: no-store` so newly published maps can be discovered immediately. |
+| `GET /api/community/maps?q=&subject=&before=` | Anonymous | Bounded search, optional subject, optional cursor | Up to 24 effective Public summaries, including `imageDimensions: { width, height }` for the ready public delivery derivative. The response is `Cache-Control: no-store` so newly published maps can be discovered immediately. |
 | `GET /api/community/maps/[mapId]?share=TOKEN` | Anonymous | Public map ID; token only for Unlisted | Effective frozen publication DTO with `private, no-store` authorization semantics. |
 | `GET /api/community/assets/[assetId]?variant=map|thumbnail&share=TOKEN` | Anonymous | Effective public asset and optional token | Non-cacheable authorized `307` redirect to short-lived sanitized WebP delivery. |
 | `GET /api/community/profiles/[username]` | Anonymous | Public username | Public profile, effective Public contributions, and milestones. |
@@ -54,7 +54,7 @@ Private sync accepts JPEG, PNG, and WebP objects up to the limits in `cloud-map-
 |`POST /api/community/maps/[mapId]/publish` | Signed-in owner | Visibility, rights basis, optional source/license/credit, optional Unlisted token, idempotency key, expected publication ID | Sanitizes derivatives and atomically creates the current publication, including an explicit update of an older public snapshot. The prior publication remains immutable history. Runs in the Node runtime with a 60-second handler limit. A source URL is optional because physical maps and personal photographs may not have an online source. Sources up to 200 megapixels are decoded within a bounded limit; the high-quality shared WebP is capped at 6,000 pixels on the long edge and keeps the private original unchanged. Reduced derivatives use scaled public anchor coordinates. |
 | `POST /api/community/maps/[mapId]/unpublish` | Signed-in owner | Expected current publication ID | Ends anonymous access without deleting local/private work. |
 
-Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images. Environments publishing a reduced large map must apply `supabase/migrations/202608260001_reduce_public_map_images.sql`; without it, the server returns a migration-specific error and preserves the private map.
+Publication requires at least two anchors and the latest synced revision. Idempotent retries recover the original result. An exact current revision with identical sharing fields returns `409` before any R2 read/write so accidental republishing cannot create duplicate public images. Environments publishing a reduced large map must apply `supabase/migrations/202608260001_reduce_public_map_images.sql`; without it, the server returns a migration-specific error and preserves the private map. The additive `list_public_maps_v2` database function supplies the public derivative dimensions to the catalog without exposing private asset keys or changing existing publications.
 
 ## Reports and moderation
 

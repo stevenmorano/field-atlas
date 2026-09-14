@@ -26,7 +26,7 @@ flowchart LR
     SW[Production service worker] --> Shell[Cached application shell]
 ```
 
-All core map behavior remains browser-local. When configured, App Router handlers add Supabase email authentication, RLS-protected metadata/revisions, and authorized presigned R2 image transfer. Missing cloud configuration does not disable or redirect any local route.
+All core map behavior remains browser-local. When configured, App Router handlers add Supabase email authentication, RLS-protected metadata/revisions, and authorized presigned R2 image transfer. Missing cloud configuration does not disable or redirect any local route. Explicit `?public=1` and Unlisted `?share=...` route requests select the authorized frozen publication copy rather than an owner's private local or cloud copy.
 
 ## Application routes
 
@@ -37,8 +37,8 @@ All core map behavior remains browser-local. When configured, App Router handler
 | `/anchor/new` | `NewAnchorSession` | Warn before replacing the active draft and start a clean workspace |
 | `/my-maps` | `MyMapsLibrary` | List, search, preview, view, compare, reopen, back up, or restore saved maps |
 | `/account` | `AccountPanel` | Email/password account, public profile settings, sign-out, and cloud-setup state |
-| `/maps/[mapId]` | `SavedMapViewer` | Local, authorized-cloud, or authorized-public raster viewer, optional offline save, reports, and ephemeral GPS |
-| `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped local, authorized-cloud, or public raster overlay synchronized with MapLibre |
+| `/maps/[mapId]` | `SavedMapViewer` | Local, authorized-cloud, or explicitly authorized-public raster viewer, public-copy Info details, optional offline save, reports, and ephemeral GPS |
+| `/maps/[mapId]/compare` | `SavedMapCompare` | Canvas-warped local, authorized-cloud, or explicitly public raster overlay synchronized with MapLibre |
 | `/profiles/[username]` | `PublicProfile` | Anonymous public mapmaker page and effective-public contributions |
 | `/moderation` | `ModerationConsole` | Staff-only post-publication and report queue |
 
@@ -53,9 +53,9 @@ The JSON and redirect handlers under `/api/cloud/*` and `/api/community/*` are c
 - `src/features/backup`: versioned package encoding/validation, SHA-256 asset deduplication, import conflict planning, atomic restore, and My Maps backup controls.
 - `src/features/cloud`: upload validation, hashing, explicit private sync, immutable revision state, account map listing, and verified device download.
 - `src/features/community`: explicit publishing, public/unlisted contracts, anonymous reports, profiles, Discover cards, and moderation UI.
-- `src/features/viewer`: saved-image pan/zoom, foreground geolocation watch, GPS-to-image projection, and accuracy visualization.
+- `src/features/viewer`: saved-image pan/zoom, foreground geolocation watch, GPS-to-image projection, accuracy visualization, public/private route selection, public-copy metadata presentation, and direct image-frame gesture transforms that avoid a React render on every large-map pointer event.
 - `src/features/compare`: compare-mesh construction and triangle-by-triangle Canvas 2D rendering over MapLibre.
-- `src/features/discover`: public catalog integration with sample fallback, filters, distance calculations, and foreground location ordering.
+- `src/features/discover`: public catalog integration with sample fallback, delivered-image dimensions, explicit public links, filters, distance calculations, and foreground location ordering.
 - `src/lib/georeferencing`: Web Mercator conversion, similarity/affine fitting, Delaunay triangulation, forward/inverse projection, and quality warnings.
 - `src/lib/local-database.ts`: IndexedDB database name, version, stores, and transaction helpers.
 - `src/lib/supabase`, `src/lib/cloud`, and `src/lib/community`: cookie-based Supabase clients, API authorization, private sync DTOs, R2 transfer, image sanitization, publication CAS, and allowlisted public DTOs.

@@ -54,6 +54,10 @@ function clampZoom(zoom: number) {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 }
 
+function imageFrameTransform(transform: ViewTransform, fitScale: number) {
+  return `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${fitScale * transform.zoom})`;
+}
+
 function pointerDistance(points: readonly Readonly<{ x: number; y: number }>[]) {
   return Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
 }
@@ -111,7 +115,9 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("share") ?? "";
+  const publicViewRequested = searchParams.get("public") === "1" || Boolean(shareToken);
   const [map, setMap] = useState<LocalSavedMap | null>(null);
+  const [loadedMapId, setLoadedMapId] = useState<string | null>(null);
   const [publicMap, setPublicMap] = useState<PublicMapDetail | null>(null);
   const [cloudMap, setCloudMap] = useState(false);
   const [imageSource, setImageSource] = useState<string | null>(null);
@@ -126,7 +132,9 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const [savingOnDevice, setSavingOnDevice] = useState(false);
   const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const imageFrameRef = useRef<HTMLDivElement | null>(null);
   const transformRef = useRef(transform);
   const fitScaleRef = useRef(1);
   const previousViewportRef = useRef<ViewportSize>({ width: 0, height: 0 });
@@ -153,25 +161,32 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
 
     void (async () => {
       try {
-        const savedMap = await readSavedMap(mapId);
-        if (cancelled) return;
-        if (savedMap) {
-          objectUrl = URL.createObjectURL(savedMap.imageBlob);
-          setMap(savedMap);
-          setCloudMap(false);
-          setImageSource(objectUrl);
-          setLoadStatus("ready");
-          return;
-        }
+        if (!publicViewRequested) {
+          const savedMap = await readSavedMap(mapId);
+          if (cancelled) return;
+          if (savedMap) {
+            objectUrl = URL.createObjectURL(savedMap.imageBlob);
+            setMap(savedMap);
+            setPublicMap(null);
+            setShowInfo(false);
+            setLoadedMapId(mapId);
+            setImageSource(objectUrl);
+            setLoadStatus("ready");
+            return;
+          }
 
-        const cloudResult = await loadCloudMapForViewing(mapId);
-        if (cloudResult) {
-          objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
-          setMap(cloudResult.map);
-          setCloudMap(true);
-          setImageSource(objectUrl);
-          setLoadStatus("ready");
-          return;
+          const cloudResult = await loadCloudMapForViewing(mapId);
+          if (cloudResult) {
+            objectUrl = URL.createObjectURL(cloudResult.map.imageBlob);
+            setMap(cloudResult.map);
+            setPublicMap(null);
+            setCloudMap(true);
+            setShowInfo(false);
+            setLoadedMapId(mapId);
+            setImageSource(objectUrl);
+            setLoadStatus("ready");
+            return;
+          }
         }
 
         const shareQuery = shareToken ? `?share=${encodeURIComponent(shareToken)}` : "";
@@ -192,6 +207,8 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         objectUrl = URL.createObjectURL(imageBlob);
         setPublicMap(detail);
         setCloudMap(false);
+        setShowInfo(false);
+        setLoadedMapId(mapId);
         setMap(publicSavedMap);
         setImageSource(objectUrl);
         setLoadStatus("ready");
@@ -206,7 +223,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [mapId, shareToken]);
+  }, [mapId, publicViewRequested, shareToken]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
@@ -341,6 +358,13 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     setTransform(nextTransform);
   }, []);
 
+  const applyGestureTransform = useCallback((nextTransform: ViewTransform) => {
+    const frame = imageFrameRef.current;
+    if (frame) {
+      frame.style.transform = imageFrameTransform(nextTransform, fitScaleRef.current);
+    }
+  }, []);
+
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || loadStatus !== "ready") {
@@ -378,6 +402,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     }
 
     const bounds = viewport.getBoundingClientRect();
+    disableFollowing();
     activePointersRef.current.set(event.pointerId, {
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
@@ -434,8 +459,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         y: midpoint.y - pinch.imagePoint.y * nextScale,
       };
       transformRef.current = nextTransform;
-      setTransform(nextTransform);
-      disableFollowing();
+      applyGestureTransform(nextTransform);
       event.preventDefault();
       return;
     }
@@ -448,8 +472,7 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         y: pan.startYOffset + points[0].y - pan.startY,
       };
       transformRef.current = nextTransform;
-      setTransform(nextTransform);
-      disableFollowing();
+      applyGestureTransform(nextTransform);
       event.preventDefault();
     }
   }
@@ -472,6 +495,8 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
         startXOffset: transformRef.current.x,
         startYOffset: transformRef.current.y,
       };
+    } else {
+      setTransform(transformRef.current);
     }
   }
 
@@ -619,7 +644,9 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
     }
   }
 
-  if (loadStatus === "loading") {
+  const currentMapIsLoaded = loadedMapId === mapId;
+
+  if (loadStatus === "loading" || (loadStatus === "ready" && !currentMapIsLoaded)) {
     return (
       <main className="saved-map-viewer-state" id="main-content">
         <div className="map-library-loading" />
@@ -656,23 +683,39 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
   const statusMessage = gpsReady
     ? locationSummary(locationStatus, projectedLocation, locationError)
     : "This map needs at least two stable anchors before GPS can be shown.";
+  const mapCopyLabel = publicMap
+    ? "Public delivery copy"
+    : cloudMap
+      ? "Cloud backup copy"
+      : "Private copy on this device";
+  const imageResolution = `${map.imageDimensions.width.toLocaleString()} × ${map.imageDimensions.height.toLocaleString()} px`;
 
   return (
     <main className="saved-map-viewer-page" id="main-content">
       <section className="saved-map-viewer" aria-label={`${map.metadata.title} map viewer`}>
         <header className="saved-map-viewer__header">
           <div className="saved-map-viewer__identity">
-            <Link href={publicMap ? "/" : "/my-maps"} aria-label={publicMap ? "Back to Discover" : "Back to My Maps"}>←</Link>
+            <Link href={(publicMap ? "/" : "/my-maps") as Route} aria-label={publicMap ? "Back to Discover" : "Back to My Maps"}>←</Link>
             <div>
               <p>{map.metadata.placeName || "Saved map"}</p>
               <h1>{map.metadata.title}</h1>
             </div>
           </div>
           <div className="saved-map-viewer__header-actions">
-            <span>{map.anchors.length} anchors</span>
-              {publicMap ? (
+            <span>{map.anchors.length} anchors · {mapCopyLabel}</span>
+            <button
+              className="button button--quiet saved-map-viewer__info-action"
+              type="button"
+              onClick={() => setShowInfo((visible) => !visible)}
+              aria-expanded={showInfo}
+              aria-controls="saved-map-details"
+              data-map-gesture-ignore
+            >
+              {showInfo ? "Close info" : "Info"}
+            </button>
+            {publicMap ? (
               <>
-                <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id, shareToken) as Route}>Compare with today</Link>
+                <Link className="button button--quiet saved-map-viewer__compare-action" href={compareMapHref(map.id, shareToken, true) as Route}>Compare with today</Link>
                 <Link className="button button--quiet saved-map-viewer__profile-action" href={`/profiles/${publicMap.author.username}` as Route}>By {publicMap.author.username}</Link>
                 <button className="button button--quiet saved-map-viewer__save-action" type="button" onClick={() => void saveOnDevice()} disabled={savingOnDevice}>{savingOnDevice ? "Saving…" : "Save on this device"}</button>
                 <button className="button button--quiet saved-map-viewer__report-action" type="button" onClick={() => setReporting(true)}>Report</button>
@@ -712,12 +755,30 @@ export function SavedMapViewer({ mapId }: Readonly<{ mapId: string }>) {
           onPointerCancel={endPointerGesture}
           aria-label="Pan and zoom saved map"
         >
+          {showInfo ? (
+            <aside className="saved-map-info" id="saved-map-details" data-map-gesture-ignore>
+              <div className="saved-map-info__header">
+                <strong>Map details</strong>
+                <button type="button" onClick={() => setShowInfo(false)} aria-label="Close map details" data-map-gesture-ignore>×</button>
+              </div>
+              <p className="saved-map-info__source">{mapCopyLabel}. {publicMap ? "This is the shared delivery image; the private original stays in the owner’s account." : "This is the copy currently opened from your device or cloud backup."}</p>
+              <dl>
+                <div><dt>Image size</dt><dd>{imageResolution}</dd></div>
+                <div><dt>File</dt><dd>{map.imageName}</dd></div>
+                <div><dt>Anchors</dt><dd>{map.anchors.length}</dd></div>
+                <div><dt>Map type</dt><dd>{map.metadata.visualStyle || "Not specified"}</dd></div>
+              </dl>
+              {publicMap?.sourceUrl ? <p className="saved-map-info__reference">Source: {publicMap.sourceUrl}</p> : null}
+              {publicMap?.attribution ? <p className="saved-map-info__reference">Credit: {publicMap.attribution}</p> : null}
+            </aside>
+          ) : null}
           <div
             className="saved-map-image-frame"
+            ref={imageFrameRef}
             style={{
               width: map.imageDimensions.width,
               height: map.imageDimensions.height,
-              transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${actualScale})`,
+              transform: imageFrameTransform(transform, fitScale),
             }}
           >
             <Image

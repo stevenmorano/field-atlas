@@ -1,7 +1,7 @@
 # Beta readiness
 
 Status: beta backlog captured; the current production deployment is not yet the public beta release candidate
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-31
 
 This document is the working release checklist for people who did not build Field Atlas. It records the usability problems, workflow gaps, and product decisions that must be clear before inviting a broader group of testers.
 
@@ -15,6 +15,9 @@ Status key: `[x]` implemented and locally validated · `[ ]` still needs impleme
 
 - [x] Viewer zoom controls now sit in a compact toolbar above the map image instead of covering it.
 - [x] The GPS status card is compact while keeping GPS details, accuracy, Recenter, and Stop discoverable.
+- [x] Public viewers identify that they are showing the shared delivery copy and expose an **Info** panel with delivered dimensions, filename, anchor count, map type, and source/credit details.
+- [x] Public catalog cards show delivered image dimensions and public links explicitly request the shared publication copy, including when the owner is signed in.
+- [x] Large-map viewer drag and pinch gestures update the image without a React render per pointer event, reducing gesture lag and page movement while preserving the full image.
 - [ ] Verify the layout at desktop, tablet, and phone widths on the release candidate.
 
 ### 2. Make Anchor Lab navigation reliable
@@ -104,6 +107,7 @@ This is a high-priority beta product improvement if Field Atlas is offered as a 
 - [ ] More advanced compass/north-up orientation tools.
 - [ ] Optional current basemap presentation beneath the public GPS viewer outside Compare.
 - [ ] Add a public world-map directory view alongside a compact, searchable list of all available maps.
+- [ ] Add optional Anchor Lab place search for a city, state, country, or address so creators can jump the basemap near an unfamiliar map area before placing anchors.
 - [ ] Richer public revision history, notifications, and contributor workflows.
 
 ## Release verification
@@ -111,9 +115,10 @@ This is a high-priority beta product improvement if Field Atlas is offered as a 
 Before calling the beta release candidate ready:
 
 1. [x] Run `npm run validate`, `npm audit --omit=dev --audit-level=high`, and `npm run build`.
-2. [ ] Exercise Anchor Lab and viewer flows at desktop and mobile dimensions, including touch and maximum zoom.
+2. [ ] Exercise Anchor Lab and viewer flows at desktop and mobile dimensions, including touch, maximum zoom, public-copy Info details, and large-map drag/pinch behavior.
 3. [ ] Exercise anonymous Public/Unlisted viewing, GPS, Compare, Save on this device, and reporting.
 4. [ ] Exercise signed-in sync, changed-revision publication, profile display, and moderation access.
 5. [ ] Confirm the Vercel deployment uses the intended Supabase/R2 environment values and callback origins.
 6. [ ] Confirm existing IndexedDB maps, cloud revisions, publications, and R2 objects are preserved; no reset, destructive migration, or broad cleanup is part of this release.
-7. [ ] Apply 202608260001_reduce_public_map_images.sql in the release environment, then publish and open one large-map test copy from a signed-out browser.
+7. [x] Apply the additive public catalog-dimensions migration in the configured Supabase environment without modifying existing records; verify a published large-map test copy reports its delivered dimensions.
+8. [ ] Apply 202608260001_reduce_public_map_images.sql in any release environment that has not received it, then publish and open one large-map test copy from a signed-out browser.

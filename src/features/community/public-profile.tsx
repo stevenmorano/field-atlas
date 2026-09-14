@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import type { Route } from "next";
+
+import { publicMapHref } from "@/features/viewer/map-links";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -59,8 +61,8 @@ export function PublicProfile({ username }: Readonly<{ username: string }>) {
         <p className="eyebrow">Contributions</p><h2 id="profile-maps-heading">Maps shared by {profile.username}</h2>
         {profile.maps.length > 0 ? <div className="profile-map-grid">{profile.maps.map((map) => (
           <article key={map.publicationId}>
-            <Link className="profile-map-preview" href={`/maps/${map.mapId}` as Route}><Image src={`/api/community/assets/${map.publicAssetId}?variant=thumbnail`} alt="" fill unoptimized sizes="(min-width: 60rem) 30vw, 100vw" /></Link>
-            <div><p>{map.subject}{map.mapYear ? ` - ${map.mapYear}` : ""}</p><h3><Link href={`/maps/${map.mapId}` as Route}>{map.title}</Link></h3><span>{map.anchorCount} anchors {map.adminChecked ? "- Admin checked" : ""}</span></div>
+            <Link className="profile-map-preview" href={publicMapHref(map.mapId) as Route}><Image src={`/api/community/assets/${map.publicAssetId}?variant=thumbnail`} alt="" fill unoptimized sizes="(min-width: 60rem) 30vw, 100vw" /></Link>
+            <div><p>{map.subject}{map.mapYear ? ` - ${map.mapYear}` : ""}</p><h3><Link href={publicMapHref(map.mapId) as Route}>{map.title}</Link></h3><span>{map.anchorCount} anchors {map.adminChecked ? "- Admin checked" : ""}</span></div>
           </article>
         ))}</div> : <p>No public maps yet.</p>}
       </section>

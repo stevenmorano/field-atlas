@@ -159,7 +159,7 @@ function publicationResponse(mapId: string, row: PublicationRetryRow, shareToken
     moderationStatus: row.moderation_status,
     visibility: row.visibility,
     shareToken,
-    sharePath: shareToken ? `/maps/${mapId}?share=${encodeURIComponent(shareToken)}` : `/maps/${mapId}`,
+    sharePath: shareToken ? `/maps/${mapId}?share=${encodeURIComponent(shareToken)}` : row.visibility === "public" ? `/maps/${mapId}?public=1` : `/maps/${mapId}`,
   };
 }
 

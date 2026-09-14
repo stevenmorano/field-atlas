@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-28 - Public map clarity and large-image interaction polish
+
+- Public Discover cards now show the delivered image dimensions alongside the year, anchor count, and contributor, so a shared large map's actual public-copy size is visible before opening it.
+- Public catalog, profile, viewer, and Compare links now explicitly request the public publication copy, so a signed-in owner does not accidentally open the private local/cloud original from a public link.
+- Public map viewers now identify the delivered copy, keep the title readable, and provide an **Info** panel with image dimensions, filename, anchor count, map type, and source/credit details.
+- Large-map viewer dragging and pinch gestures now update the displayed image without a React render on every pointer event, reducing visible lag and page movement while preserving the full image and current zoom range.
+- Added the additive `list_public_maps_v2` catalog function to expose ready public-derivative dimensions without changing any existing map, revision, publication, or R2 object.
+
 ## 2026-08-26 - Safe public derivatives for large scans
 
 - Public publishing now accepts source images within a bounded 200-megapixel decode limit and automatically creates a high-quality WebP derivative capped at 6,000 pixels on the long edge.
